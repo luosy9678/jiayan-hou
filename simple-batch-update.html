@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单批量更新头像</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin-top: 15px; padding: 10px; background: #f0f0f0; white-space: pre-wrap; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>简单批量更新头像</h1>
+    
+    <button onclick="testBatchUpdate()">批量更新所有用户头像</button>
+    <button onclick="testWithCustomName()">使用自定义文件名更新</button>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+
+        async function testBatchUpdate() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '正在批量更新...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/test-batch-update-avatars`);
+                const result = await response.json();
+                resultDiv.textContent = `更新结果:\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `更新失败: ${error.message}`;
+            }
+        }
+
+        async function testWithCustomName() {
+            const customName = prompt('请输入头像文件名:', 'avatar_42_1754228678367_22db36a6.png');
+            if (!customName) return;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '正在批量更新...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/test-batch-update-avatars?avatarFileName=${encodeURIComponent(customName)}`);
+                const result = await response.json();
+                resultDiv.textContent = `更新结果:\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `更新失败: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> 

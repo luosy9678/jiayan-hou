@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像功能测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; white-space: pre-wrap; border-radius: 3px; }
+        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+        .token-info { background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .avatar-preview { max-width: 200px; max-height: 200px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>头像功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 用户认证</h3>
+        <button onclick="sendCode()">发送验证码</button>
+        <button onclick="registerUser()">使用验证码注册</button>
+        <button onclick="loginUser()">登录用户</button>
+        <div id="authResult" class="result"></div>
+        <div id="tokenInfo" class="token-info" style="display:none;">
+            <strong>当前Token:</strong> <span id="currentToken"></span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 头像文件上传</h3>
+        <input type="file" id="avatarFile" accept="image/*">
+        <button onclick="uploadAvatar()">上传头像</button>
+        <div id="uploadResult" class="result"></div>
+        <img id="uploadPreview" class="avatar-preview" style="display:none;">
+    </div>
+
+    <div class="test-section">
+        <h3>3. 头像URL下载</h3>
+        <input type="text" id="avatarUrl" placeholder="头像URL" value="https://httpbin.org/image/jpeg">
+        <button onclick="downloadAvatar()">下载头像</button>
+        <div id="downloadResult" class="result"></div>
+        <img id="downloadPreview" class="avatar-preview" style="display:none;">
+    </div>
+
+    <div class="test-section">
+        <h3>4. 获取用户信息（查看头像）</h3>
+        <button onclick="getUserProfile()">获取用户信息</button>
+        <div id="profileResult" class="result"></div>
+        <img id="profilePreview" class="avatar-preview" style="display:none;">
+    </div>
+
+    <div class="test-section">
+        <h3>5. 删除头像</h3>
+        <button onclick="deleteAvatar()">删除头像</button>
+        <div id="deleteResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        let currentToken = null;
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        function showTokenInfo() {
+            document.getElementById('currentToken').textContent = currentToken;
+            document.getElementById('tokenInfo').style.display = 'block';
+        }
+
+        function showAvatarPreview(elementId, avatarUrl) {
+            const preview = document.getElementById(elementId);
+            if (avatarUrl) {
+                preview.src = avatarUrl.startsWith('http') ? avatarUrl : `${API_BASE}${avatarUrl}`;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        async function sendCode() {
+            showResult('authResult', '发送验证码中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/send-code?phone=13800138001&type=register`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showResult('authResult', '验证码已发送！请查看服务控制台日志获取验证码（6位数字）', 'success');
+                } else {
+                    showResult('authResult', `发送验证码失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `发送验证码失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function registerUser() {
+            const verificationCode = prompt('请输入验证码（6位数字）:');
+            if (!verificationCode) {
+                showResult('authResult', '验证码不能为空', 'error');
+                return;
+            }
+            
+            showResult('authResult', '注册中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: '13800138001',
+                        email: 'test@example.com',
+                        password: '123456',
+                        nickname: '测试用户',
+                        verificationCode: verificationCode
+                    })
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    currentToken = result.data.token;
+                    showTokenInfo();
+                    showResult('authResult', `注册成功！用户ID: ${result.data.user.id}`, 'success');
+                } else {
+                    showResult('authResult', `注册失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `注册失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function loginUser() {
+            showResult('authResult', '登录中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account: '13800138001',
+                        password: '123456'
+                    })
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    currentToken = result.data.token;
+                    showTokenInfo();
+                    showResult('authResult', `登录成功！用户ID: ${result.data.user.id}`, 'success');
+                } else {
+                    showResult('authResult', `登录失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `登录失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function uploadAvatar() {
+            if (!currentToken) {
+                showResult('uploadResult', '请先登录获取Token', 'error');
+                return;
+            }
+
+            const fileInput = document.getElementById('avatarFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('uploadResult', '请选择文件', 'error');
+                return;
+            }
+            
+            showResult('uploadResult', '上传中...', 'info');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/avatar/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    showResult('uploadResult', `头像上传成功！文件名: ${result.data}`, 'success');
+                    showAvatarPreview('uploadPreview', `${API_BASE}/avatar/${result.data}`);
+                } else {
+                    showResult('uploadResult', `头像上传失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('uploadResult', `头像上传失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function downloadAvatar() {
+            if (!currentToken) {
+                showResult('downloadResult', '请先登录获取Token', 'error');
+                return;
+            }
+
+            const avatarUrl = document.getElementById('avatarUrl').value;
+            if (!avatarUrl) {
+                showResult('downloadResult', '请输入头像URL', 'error');
+                return;
+            }
+            
+            showResult('downloadResult', '下载中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/avatar/download`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: `avatarUrl=${encodeURIComponent(avatarUrl)}`
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    showResult('downloadResult', `头像下载成功！文件名: ${result.data}`, 'success');
+                    showAvatarPreview('downloadPreview', `${API_BASE}/avatar/${result.data}`);
+                } else {
+                    showResult('downloadResult', `头像下载失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('downloadResult', `头像下载失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function getUserProfile() {
+            if (!currentToken) {
+                showResult('profileResult', '请先登录获取Token', 'error');
+                return;
+            }
+            
+            showResult('profileResult', '获取中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/user/profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    const user = result.data;
+                    showResult('profileResult', `用户信息获取成功！\n用户ID: ${user.id}\n昵称: ${user.nickname}\n头像: ${user.avatar || '无'}`, 'success');
+                    if (user.avatar) {
+                        showAvatarPreview('profilePreview', user.avatar);
+                    }
+                } else {
+                    showResult('profileResult', `获取用户信息失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('profileResult', `获取用户信息失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteAvatar() {
+            if (!currentToken) {
+                showResult('deleteResult', '请先登录获取Token', 'error');
+                return;
+            }
+            
+            showResult('deleteResult', '删除中...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/avatar/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    showResult('deleteResult', '头像删除成功！', 'success');
+                    // 隐藏所有预览
+                    document.getElementById('uploadPreview').style.display = 'none';
+                    document.getElementById('downloadPreview').style.display = 'none';
+                    document.getElementById('profilePreview').style.display = 'none';
+                } else {
+                    showResult('deleteResult', `头像删除失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('deleteResult', `头像删除失败: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html> 

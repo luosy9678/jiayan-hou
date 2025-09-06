@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记接口测试 - 简化版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>日记接口测试 - 简化版</h1>
+        <p>测试日记相关的API接口是否正常工作</p>
+
+        <div class="test-section">
+            <h3>1. 基础连接测试</h3>
+            <button onclick="testBasicConnection()">测试基础连接</button>
+            <div id="basic-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 日记创建测试</h3>
+            <button onclick="testCreateDiary()">测试创建日记</button>
+            <div id="create-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 日记列表测试</h3>
+            <button onclick="testGetDiaryList()">测试获取日记列表</button>
+            <div id="list-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 日记详情测试</h3>
+            <button onclick="testGetDiaryDetail()">测试获取日记详情</button>
+            <div id="detail-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 日记统计测试</h3>
+            <button onclick="testGetDiaryStats()">测试获取日记统计</button>
+            <div id="stats-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. 日记搜索测试</h3>
+            <button onclick="testSearchDiary()">测试搜索日记</button>
+            <div id="search-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>7. 日记转发测试</h3>
+            <button onclick="testForwardDiary()">测试转发日记</button>
+            <div id="forward-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>8. 日记更新测试</h3>
+            <button onclick="testUpdateDiary()">测试更新日记</button>
+            <div id="update-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>9. 日记删除测试</h3>
+            <button onclick="testDeleteDiary()">测试删除日记</button>
+            <div id="delete-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1/test';
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${type}`;
+        }
+
+        function logResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            element.textContent += logEntry;
+            element.className = `result ${type}`;
+        }
+
+        async function testBasicConnection() {
+            try {
+                logResult('basic-result', '开始测试基础连接...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/hello`);
+                const text = await response.text();
+                
+                if (response.ok) {
+                    logResult('basic-result', `✅ 基础连接成功: ${text}`, 'success');
+                } else {
+                    logResult('basic-result', `❌ 基础连接失败: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                logResult('basic-result', `❌ 基础连接异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateDiary() {
+            try {
+                logResult('create-result', '开始测试创建日记...', 'info');
+                
+                const diaryData = {
+                    content: "今天开始戒烟，感觉有点紧张，但是我相信我能做到！",
+                    tags: ["戒烟", "坚持", "健康"],
+                    images: []
+                };
+
+                const response = await fetch(`${BASE_URL}/test/diary/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(diaryData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('create-result', `✅ 日记创建成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('create-result', `❌ 日记创建失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('create-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('create-result', `❌ 日记创建异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetDiaryList() {
+            try {
+                logResult('list-result', '开始测试获取日记列表...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/diary/list?page=1&pageSize=10`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('list-result', `✅ 获取日记列表成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('list-result', `❌ 获取日记列表失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('list-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('list-result', `❌ 获取日记列表异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetDiaryDetail() {
+            try {
+                logResult('detail-result', '开始测试获取日记详情...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/diary/detail`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('detail-result', `✅ 获取日记详情成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('detail-result', `❌ 获取日记详情失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('detail-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('detail-result', `❌ 获取日记详情异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetDiaryStats() {
+            try {
+                logResult('stats-result', '开始测试获取日记统计...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/diary/stats`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('stats-result', `✅ 获取日记统计成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('stats-result', `❌ 获取日记统计失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('stats-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('stats-result', `❌ 获取日记统计异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSearchDiary() {
+            try {
+                logResult('search-result', '开始测试搜索日记...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/diary-status`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('search-result', `✅ 搜索日记成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('search-result', `❌ 搜索日记失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('search-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('search-result', `❌ 搜索日记异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testForwardDiary() {
+            try {
+                logResult('forward-result', '开始测试转发日记...', 'info');
+                
+                const forwardData = {
+                    section: "戒烟心得"
+                };
+
+                const response = await fetch(`${BASE_URL}/test/diary-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(forwardData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('forward-result', `✅ 转发日记成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('forward-result', `❌ 转发日记失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('forward-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('forward-result', `❌ 转发日记异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUpdateDiary() {
+            try {
+                logResult('update-result', '开始测试更新日记...', 'info');
+                
+                const updateData = {
+                    content: "更新后的日记内容：今天戒烟第三天，感觉好多了！",
+                    tags: ["戒烟", "坚持", "进步"],
+                    moodScore: 8
+                };
+
+                const response = await fetch(`${BASE_URL}/test/diary-status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    logResult('update-result', `✅ 更新日记成功: ${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    logResult('update-result', `❌ 更新日记失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('update-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('update-result', `❌ 更新日记异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDeleteDiary() {
+            try {
+                logResult('delete-result', '开始测试删除日记...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/test/diary-status`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    logResult('delete-result', `✅ 删除日记成功`, 'success');
+                } else {
+                    const result = await response.json();
+                    logResult('delete-result', `❌ 删除日记失败: ${response.status} ${response.statusText}`, 'error');
+                    if (result) {
+                        logResult('delete-result', `错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                    }
+                }
+            } catch (error) {
+                logResult('delete-result', `❌ 删除日记异常: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载完成后自动测试基础连接
+        window.addEventListener('load', () => {
+            setTimeout(testBasicConnection, 1000);
+        });
+    </script>
+</body>
+</html> 

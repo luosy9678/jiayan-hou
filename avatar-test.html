@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像功能测试</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #f7f8fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+        }
+        .avatar-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #1989fa;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1677ff;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .info-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .info-value {
+            color: #6c757d;
+            word-break: break-all;
+        }
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>头像功能测试</h1>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="avatar-section">
+            <img id="avatarImage" class="avatar-image" src="" alt="头像">
+            <p id="userName">用户昵称</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="uploadAvatar()">上传头像</button>
+            <button class="btn btn-info" onclick="downloadFromUrl()">从URL下载</button>
+            <button class="btn btn-danger" id="deleteBtn" onclick="deleteAvatar()" style="display: none;">删除头像</button>
+        </div>
+        
+        <div class="info-section">
+            <h3>头像信息</h3>
+            <div class="info-item">
+                <span class="info-label">头像文件名:</span>
+                <span class="info-value" id="avatarFileName">无</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">头像URL:</span>
+                <span class="info-value" id="avatarUrl">无</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">用户ID:</span>
+                <span class="info-value" id="userId">无</span>
+            </div>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+    </div>
+
+    <script>
+        // 头像工具类
+        class AvatarUtils {
+            constructor(baseUrl = 'http://localhost:8081/api/v1') {
+                this.baseUrl = baseUrl;
+            }
+
+            buildAvatarUrl(avatar) {
+                if (!avatar || avatar.trim() === '') {
+                    return '';
+                }
+                
+                if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                    return avatar;
+                }
+                
+                if (avatar.startsWith('/api/v1/avatar/')) {
+                    const fileName = avatar.replace('/api/v1/avatar/', '');
+                    return `${this.baseUrl}/avatar/${fileName}`;
+                }
+                
+                if (avatar.startsWith('/api/v1/')) {
+                    const cleanPath = avatar.replace('/api/v1', '');
+                    return `${this.baseUrl}${cleanPath}`;
+                }
+                
+                return `${this.baseUrl}/avatar/${avatar}`;
+            }
+        }
+
+        const avatarUtils = new AvatarUtils();
+        let userInfo = {};
+
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // 更新界面
+        function updateUI() {
+            const avatarImage = document.getElementById('avatarImage');
+            const userName = document.getElementById('userName');
+            const avatarFileName = document.getElementById('avatarFileName');
+            const avatarUrl = document.getElementById('avatarUrl');
+            const userId = document.getElementById('userId');
+            const deleteBtn = document.getElementById('deleteBtn');
+
+            // 更新头像
+            const avatarUrlValue = avatarUtils.buildAvatarUrl(userInfo.avatar);
+            avatarImage.src = avatarUrlValue;
+            
+            // 更新用户信息
+            userName.textContent = userInfo.nickname || '用户';
+            avatarFileName.textContent = userInfo.avatar || '无';
+            avatarUrl.textContent = avatarUrlValue;
+            userId.textContent = userInfo.id || '无';
+            
+            // 显示/隐藏删除按钮
+            deleteBtn.style.display = userInfo.avatar ? 'block' : 'none';
+        }
+
+        // 获取用户信息
+        async function loadUserInfo() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showMessage('请先登录', 'error');
+                    return;
+                }
+
+                const response = await fetch('http://localhost:8081/api/v1/user/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    userInfo = result.data;
+                    updateUI();
+                } else {
+                    showMessage('获取用户信息失败', 'error');
+                }
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+                showMessage('获取用户信息失败', 'error');
+            }
+        }
+
+        // 上传头像
+        function uploadAvatar() {
+            document.getElementById('fileInput').click();
+        }
+
+        // 处理文件选择
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:8081/api/v1/avatar/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    userInfo.avatar = result.data;
+                    updateUI();
+                    showMessage('头像上传成功');
+                } else {
+                    showMessage('头像上传失败', 'error');
+                }
+            } catch (error) {
+                console.error('头像上传失败:', error);
+                showMessage('头像上传失败', 'error');
+            }
+        }
+
+        // 从URL下载头像
+        async function downloadFromUrl() {
+            const url = prompt('请输入头像URL:');
+            if (!url) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:8081/api/v1/avatar/download', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `avatarUrl=${encodeURIComponent(url)}`
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    userInfo.avatar = result.data;
+                    updateUI();
+                    showMessage('头像下载成功');
+                } else {
+                    showMessage('头像下载失败', 'error');
+                }
+            } catch (error) {
+                console.error('头像下载失败:', error);
+                showMessage('头像下载失败', 'error');
+            }
+        }
+
+        // 删除头像
+        async function deleteAvatar() {
+            if (!confirm('确定要删除头像吗？')) return;
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:8081/api/v1/avatar/delete', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    userInfo.avatar = '';
+                    updateUI();
+                    showMessage('头像删除成功');
+                } else {
+                    showMessage('头像删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('头像删除失败:', error);
+                showMessage('头像删除失败', 'error');
+            }
+        }
+
+        // 页面加载完成后获取用户信息
+        window.onload = loadUserInfo;
+    </script>
+</body>
+</html> 

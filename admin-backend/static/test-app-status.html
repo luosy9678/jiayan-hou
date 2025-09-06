@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用状态测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>应用状态测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 测试应用连接</h2>
+        <button onclick="testConnection()">测试连接</button>
+        <div id="connectionResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 测试管理员统计接口</h2>
+        <button onclick="testAdminStats()">测试管理员统计</button>
+        <div id="statsResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试用户列表接口</h2>
+        <button onclick="testUserList()">测试用户列表</button>
+        <div id="userResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 测试协议列表接口</h2>
+        <button onclick="testAgreementsList()">测试协议列表</button>
+        <div id="agreementsResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        
+        function showResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+        
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/stats`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('connectionResult', `✅ 连接成功！服务器响应正常。<br>响应数据: <pre>${JSON.stringify(data, null, 2)}</pre>`, true);
+                } else {
+                    showResult('connectionResult', `❌ 连接失败！状态码: ${response.status}`, false);
+                }
+            } catch (error) {
+                showResult('connectionResult', `❌ 连接错误: ${error.message}`, false);
+            }
+        }
+        
+        async function testAdminStats() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/stats`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('statsResult', `✅ 管理员统计接口正常！<br>响应数据: <pre>${JSON.stringify(data, null, 2)}</pre>`, true);
+                } else {
+                    showResult('statsResult', `❌ 管理员统计接口失败！状态码: ${response.status}`, false);
+                }
+            } catch (error) {
+                showResult('statsResult', `❌ 管理员统计接口错误: ${error.message}`, false);
+            }
+        }
+        
+        async function testUserList() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/users?page=0&size=5`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('userResult', `✅ 用户列表接口正常！<br>响应数据: <pre>${JSON.stringify(data, null, 2)}</pre>`, true);
+                } else {
+                    showResult('userResult', `❌ 用户列表接口失败！状态码: ${response.status}`, false);
+                }
+            } catch (error) {
+                showResult('userResult', `❌ 用户列表接口错误: ${error.message}`, false);
+            }
+        }
+        
+        async function testAgreementsList() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/agreements`);
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('agreementsResult', `✅ 协议列表接口正常！<br>响应数据: <pre>${JSON.stringify(data, null, 2)}</pre>`, true);
+                } else {
+                    showResult('agreementsResult', `❌ 协议列表接口失败！状态码: ${response.status}`, false);
+                }
+            } catch (error) {
+                showResult('agreementsResult', `❌ 协议列表接口错误: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html> 

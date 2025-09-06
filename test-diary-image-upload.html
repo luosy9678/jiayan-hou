@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记图片上传测试</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>日记图片上传测试</h1>
+    
+    <div>
+        <h3>1. 上传图片</h3>
+        <input type="file" id="imageFiles" multiple accept="image/*">
+        <button onclick="uploadImages()">上传图片</button>
+        <div id="uploadResult"></div>
+    </div>
+    
+    <div>
+        <h3>2. 创建带图片的日记</h3>
+        <textarea id="content" placeholder="日记内容" rows="4" cols="50"></textarea><br>
+        <input type="text" id="tags" placeholder="标签，用逗号分隔"><br>
+        <button onclick="createDiaryWithImages()">创建日记</button>
+        <div id="diaryResult"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1';
+        const TOKEN = 'your-jwt-token-here'; // 替换为真实的token
+        const USER_ID = 1; // 替换为真实的用户ID
+        
+        let uploadedImages = [];
+        
+        async function uploadImages() {
+            const fileInput = document.getElementById('imageFiles');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                alert('请选择图片文件');
+                return;
+            }
+            
+            if (files.length > 6) {
+                alert('最多只能选择6张图片');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('userId', USER_ID);
+            
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            try {
+                const response = await axios.post(`${BASE_URL}/diary/image/upload`, formData, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                if (response.data.success) {
+                    uploadedImages = response.data.data;
+                    document.getElementById('uploadResult').innerHTML = 
+                        `<p style="color: green;">✅ 图片上传成功！共上传 ${uploadedImages.length} 张图片</p>`;
+                } else {
+                    document.getElementById('uploadResult').innerHTML = 
+                        `<p style="color: red;">❌ 图片上传失败: ${response.data.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = 
+                    `<p style="color: red;">❌ 图片上传失败: ${error.message}</p>`;
+            }
+        }
+        
+        async function createDiaryWithImages() {
+            const content = document.getElementById('content').value;
+            const tags = document.getElementById('tags').value;
+            
+            if (!content.trim()) {
+                alert('请输入日记内容');
+                return;
+            }
+            
+            const diaryData = {
+                content: content,
+                tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+                images: uploadedImages
+            };
+            
+            try {
+                const response = await axios.post(`${BASE_URL}/diary/create`, diaryData, {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                document.getElementById('diaryResult').innerHTML = 
+                    `<p style="color: green;">✅ ${response.data}</p>`;
+            } catch (error) {
+                document.getElementById('diaryResult').innerHTML = 
+                    `<p style="color: red;">❌ 创建日记失败: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 

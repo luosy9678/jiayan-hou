@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记接口最终测试</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>日记接口最终测试</h1>
+    <p>测试新创建的 SimpleDiaryController</p>
+    
+    <div>
+        <h3>1. 测试基础接口</h3>
+        <button onclick="testBasic()">测试 /api/v1/diary/test</button>
+        <div id="result1"></div>
+    </div>
+    
+    <div>
+        <h3>2. 测试创建日记</h3>
+        <button onclick="testCreate()">测试 /api/v1/diary/create</button>
+        <div id="result2"></div>
+    </div>
+    
+    <div>
+        <h3>3. 测试获取列表</h3>
+        <button onclick="testList()">测试 /api/v1/diary/list</button>
+        <div id="result3"></div>
+    </div>
+    
+    <div>
+        <h3>4. 测试获取统计</h3>
+        <button onclick="testStats()">测试 /api/v1/diary/stats</button>
+        <div id="result4"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1/diary';
+        
+        function testBasic() {
+            axios.get(`${BASE_URL}/test`)
+                .then(response => {
+                    document.getElementById('result1').innerHTML = `<p style="color: green;">✅ 成功: ${response.data}</p>`;
+                })
+                .catch(error => {
+                    document.getElementById('result1').innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+                });
+        }
+        
+        function testCreate() {
+            const data = { content: "测试日记内容" };
+            axios.post(`${BASE_URL}/create`, data)
+                .then(response => {
+                    document.getElementById('result2').innerHTML = `<p style="color: green;">✅ 成功: ${response.data}</p>`;
+                })
+                .catch(error => {
+                    document.getElementById('result2').innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+                });
+        }
+        
+        function testList() {
+            axios.get(`${BASE_URL}/list`)
+                .then(response => {
+                    document.getElementById('result3').innerHTML = `<p style="color: green;">✅ 成功: ${response.data}</p>`;
+                })
+                .catch(error => {
+                    document.getElementById('result3').innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+                });
+        }
+        
+        function testStats() {
+            axios.get(`${BASE_URL}/stats`)
+                .then(response => {
+                    document.getElementById('result4').innerHTML = `<p style="color: green;">✅ 成功: ${response.data}</p>`;
+                })
+                .catch(error => {
+                    document.getElementById('result4').innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+                });
+        }
+    </script>
+</body>
+</html> 

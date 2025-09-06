@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试获取日记详情 - 简化版</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>测试获取日记详情</h1>
+    
+    <div class="form-group">
+        <label for="token">Bearer Token:</label>
+        <input type="text" id="token" placeholder="输入Bearer Token">
+    </div>
+    
+    <div class="form-group">
+        <label for="diaryId">日记ID:</label>
+        <input type="number" id="diaryId" placeholder="输入日记ID" value="1">
+    </div>
+    
+    <button onclick="testGetDiaryDetail()">获取日记详情</button>
+    <button onclick="testCreateDiary()">创建测试日记</button>
+    
+    <div id="result"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1/diary';
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+        
+        async function testGetDiaryDetail() {
+            const token = document.getElementById('token').value.trim();
+            const diaryId = document.getElementById('diaryId').value.trim();
+            
+            if (!token) {
+                showResult('请输入Bearer Token', 'error');
+                return;
+            }
+            
+            if (!diaryId) {
+                showResult('请输入日记ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取日记详情...', 'info');
+                
+                const response = await axios.get(`${BASE_URL}/${diaryId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('日记详情响应:', response.data);
+                showResult(`✅ 获取日记详情成功！\n\n${JSON.stringify(response.data, null, 2)}`, 'success');
+                
+            } catch (error) {
+                console.error('获取日记详情失败:', error);
+                let errorMessage = '❌ 获取日记详情失败';
+                
+                if (error.response) {
+                    errorMessage += `\n状态码: ${error.response.status}`;
+                    if (error.response.data) {
+                        errorMessage += `\n响应数据: ${JSON.stringify(error.response.data, null, 2)}`;
+                    }
+                } else if (error.message) {
+                    errorMessage += `\n错误信息: ${error.message}`;
+                }
+                
+                showResult(errorMessage, 'error');
+            }
+        }
+        
+        async function testCreateDiary() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入Bearer Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在创建测试日记...', 'info');
+                
+                const diaryData = {
+                    content: "这是一篇测试日记，用于测试获取日记详情功能。",
+                    tags: ["测试", "日记", "功能验证"],
+                    images: []
+                };
+                
+                const response = await axios.post(`${BASE_URL}/create`, diaryData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('创建日记响应:', response.data);
+                
+                // 从响应中提取日记ID
+                const responseText = response.data;
+                const idMatch = responseText.match(/日记ID: (\d+)/);
+                if (idMatch) {
+                    const diaryId = idMatch[1];
+                    document.getElementById('diaryId').value = diaryId;
+                    showResult(`✅ 测试日记创建成功！\n日记ID: ${diaryId}\n\n现在可以点击"获取日记详情"来查看这篇日记。`, 'success');
+                } else {
+                    showResult('✅ 日记创建成功，但无法获取日记ID', 'success');
+                }
+                
+            } catch (error) {
+                console.error('创建日记失败:', error);
+                let errorMessage = '❌ 创建日记失败';
+                
+                if (error.response) {
+                    errorMessage += `\n状态码: ${error.response.status}`;
+                    if (error.response.data) {
+                        errorMessage += `\n响应数据: ${error.response.data}`;
+                    }
+                } else if (error.message) {
+                    errorMessage += `\n错误信息: ${error.message}`;
+                }
+                
+                showResult(errorMessage, 'error');
+            }
+        }
+        
+        // 页面加载完成后的提示
+        window.onload = function() {
+            showResult('请先输入Bearer Token，然后可以：\n1. 先创建一篇测试日记\n2. 获取日记详情', 'info');
+        };
+    </script>
+</body>
+</html> 

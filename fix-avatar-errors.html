@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像错误修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .avatar-display {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ccc;
+            margin: 10px;
+        }
+        .avatar-placeholder {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #9CA3AF;
+            border: 2px solid #ccc;
+            margin: 10px;
+        }
+        .console-output {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>头像错误修复测试</h1>
+    <p>此页面用于测试头像URL构建和显示，确保不再出现404错误</p>
+    
+    <div class="test-section">
+        <h2>1. 头像URL构建测试</h2>
+        <div id="url-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 头像显示测试</h2>
+        <div id="display-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 控制台错误检查</h2>
+        <div id="console-output" class="console-output"></div>
+        <button onclick="checkConsoleErrors()">检查控制台错误</button>
+    </div>
+
+    <script>
+        // 修复后的头像工具类
+        class AvatarUtils {
+            constructor(baseUrl = 'http://localhost:8081/api/v1') {
+                this.baseUrl = baseUrl;
+            }
+
+            buildAvatarUrl(avatar) {
+                console.log('构建头像URL，输入:', avatar);
+                
+                if (!avatar || avatar.trim() === '') {
+                    console.log('返回空字符串（无头像）');
+                    return '';
+                }
+                
+                if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                    console.log('返回完整URL:', avatar);
+                    return avatar;
+                }
+                
+                if (avatar.startsWith('/api/v1/avatar/')) {
+                    const fileName = avatar.replace('/api/v1/avatar/', '');
+                    const fullUrl = `${this.baseUrl}/avatar/${fileName}`;
+                    console.log('构建的完整URL:', fullUrl);
+                    return fullUrl;
+                }
+                
+                if (avatar.startsWith('/api/v1/')) {
+                    const cleanPath = avatar.replace('/api/v1', '');
+                    const fullUrl = `${this.baseUrl}${cleanPath}`;
+                    console.log('构建的完整URL:', fullUrl);
+                    return fullUrl;
+                }
+                
+                const fullUrl = `${this.baseUrl}/avatar/${avatar}`;
+                console.log('构建的完整URL:', fullUrl);
+                return fullUrl;
+            }
+        }
+
+        const avatarUtils = new AvatarUtils();
+        let consoleErrors = [];
+
+        // 捕获控制台错误
+        const originalError = console.error;
+        console.error = function(...args) {
+            consoleErrors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+
+        // 测试用例
+        const testCases = [
+            {
+                name: '空值测试',
+                input: '',
+                expected: ''
+            },
+            {
+                name: '有效头像文件名',
+                input: 'avatar_42_1754228678367_22db36a6.png',
+                expected: 'http://localhost:8081/api/v1/avatar/avatar_42_1754228678367_22db36a6.png'
+            },
+            {
+                name: '完整URL',
+                input: 'https://example.com/avatar.jpg',
+                expected: 'https://example.com/avatar.jpg'
+            },
+            {
+                name: '相对路径',
+                input: '/api/v1/avatar/test.png',
+                expected: 'http://localhost:8081/api/v1/avatar/test.png'
+            }
+        ];
+
+        // 运行URL构建测试
+        function runUrlTests() {
+            const resultsDiv = document.getElementById('url-test-results');
+            
+            testCases.forEach((testCase, index) => {
+                const output = avatarUtils.buildAvatarUrl(testCase.input);
+                const isCorrect = output === testCase.expected;
+                
+                const testDiv = document.createElement('div');
+                testDiv.style.border = '1px solid #ddd';
+                testDiv.style.margin = '10px 0';
+                testDiv.style.padding = '10px';
+                testDiv.style.borderRadius = '5px';
+                
+                testDiv.innerHTML = `
+                    <h4>测试${index + 1}: ${testCase.name}</h4>
+                    <p><strong>输入:</strong> "${testCase.input}"</p>
+                    <p><strong>输出:</strong> "${output}"</p>
+                    <p><strong>期望:</strong> "${testCase.expected}"</p>
+                    <p><strong>结果:</strong> <span class="${isCorrect ? 'success' : 'error'}">${isCorrect ? '✅ 正确' : '❌ 错误'}</span></p>
+                `;
+                
+                resultsDiv.appendChild(testDiv);
+            });
+        }
+
+        // 运行显示测试
+        function runDisplayTests() {
+            const resultsDiv = document.getElementById('display-test-results');
+            
+            testCases.forEach((testCase, index) => {
+                const output = avatarUtils.buildAvatarUrl(testCase.input);
+                
+                const testDiv = document.createElement('div');
+                testDiv.style.border = '1px solid #ddd';
+                testDiv.style.margin = '10px 0';
+                testDiv.style.padding = '10px';
+                testDiv.style.borderRadius = '5px';
+                
+                let avatarDisplay = '';
+                if (output) {
+                    avatarDisplay = `
+                        <img src="${output}" alt="头像" class="avatar-display" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; console.log('头像加载失败:', this.src);" 
+                             onload="console.log('头像加载成功:', this.src)">
+                        <div class="avatar-placeholder" style="display:none">👤</div>
+                    `;
+                } else {
+                    avatarDisplay = '<div class="avatar-placeholder">👤</div>';
+                }
+                
+                testDiv.innerHTML = `
+                    <h4>显示测试${index + 1}: ${testCase.name}</h4>
+                    <p><strong>输入:</strong> "${testCase.input}"</p>
+                    <p><strong>URL:</strong> "${output}"</p>
+                    <p><strong>显示效果:</strong></p>
+                    ${avatarDisplay}
+                `;
+                
+                resultsDiv.appendChild(testDiv);
+            });
+        }
+
+        // 检查控制台错误
+        function checkConsoleErrors() {
+            const outputDiv = document.getElementById('console-output');
+            if (consoleErrors.length === 0) {
+                outputDiv.textContent = '✅ 没有发现控制台错误';
+            } else {
+                outputDiv.textContent = '❌ 发现以下错误:\n' + consoleErrors.join('\n');
+            }
+        }
+
+        // 页面加载完成后运行测试
+        window.onload = function() {
+            runUrlTests();
+            runDisplayTests();
+            
+            // 延迟检查错误
+            setTimeout(checkConsoleErrors, 2000);
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试编辑分类功能</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>测试编辑分类功能</h1>
+    
+    <div class="test-section">
+        <h3>1. 获取分类详情</h3>
+        <button class="btn" onclick="testGetCategory()">获取分类ID=6的详情</button>
+        <div id="getResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 更新分类</h3>
+        <button class="btn" onclick="testUpdateCategory()">更新分类ID=6</button>
+        <div id="updateResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 验证更新结果</h3>
+        <button class="btn" onclick="testVerifyUpdate()">验证更新结果</button>
+        <div id="verifyResult" class="result"></div>
+    </div>
+    
+    <script>
+        async function testGetCategory() {
+            try {
+                const response = await fetch('/api/v1/knowledge/categories/6');
+                const data = await response.json();
+                document.getElementById('getResult').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('getResult').innerHTML = '错误: ' + error.message;
+            }
+        }
+        
+        async function testUpdateCategory() {
+            try {
+                const updateData = {
+                    name: "测试编辑功能",
+                    description: "这是通过编辑功能更新的分类",
+                    sortOrder: 2,
+                    accessLevel: "member",
+                    memberOnly: true,
+                    isActive: true,
+                    iconName: null
+                };
+                
+                const response = await fetch('/api/v1/knowledge/categories/6', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const data = await response.json();
+                document.getElementById('updateResult').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('updateResult').innerHTML = '错误: ' + error.message;
+            }
+        }
+        
+        async function testVerifyUpdate() {
+            try {
+                const response = await fetch('/api/v1/knowledge/categories/6');
+                const data = await response.json();
+                document.getElementById('verifyResult').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('verifyResult').innerHTML = '错误: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像下载测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 15px; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f0f0f0; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>头像下载功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试第三方登录（带头像）</h3>
+        <input type="text" id="avatarUrl" placeholder="头像URL" value="https://via.placeholder.com/150x150.jpg?text=Test+Avatar">
+        <button onclick="testThirdPartyWithAvatar()">测试第三方登录（带头像）</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试头像下载接口</h3>
+        <input type="text" id="downloadUrl" placeholder="下载的头像URL" value="https://via.placeholder.com/150x150.jpg?text=Test+Avatar">
+        <button onclick="testAvatarDownload()">测试头像下载</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 检查uploads目录</h3>
+        <button onclick="checkUploadsDir()">检查uploads目录</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+
+        async function testThirdPartyWithAvatar() {
+            const resultDiv = document.getElementById('result1');
+            const avatarUrl = document.getElementById('avatarUrl').value;
+            
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/third-party/bind`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        platform: 'wechat',
+                        openid: 'test_openid_' + Date.now(),
+                        nickname: '测试用户',
+                        avatar: avatarUrl
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+
+        async function testAvatarDownload() {
+            const resultDiv = document.getElementById('result2');
+            const downloadUrl = document.getElementById('downloadUrl').value;
+            
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/avatar/download`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM1Njg5NjAwfQ.example'
+                    },
+                    body: `avatarUrl=${encodeURIComponent(downloadUrl)}`
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+
+        async function checkUploadsDir() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.textContent = '无法直接检查服务器文件系统，请手动查看uploads/avatars目录';
+        }
+    </script>
+</body>
+</html> 

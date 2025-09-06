@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简单API测试</title>
+</head>
+<body>
+    <h1>简单API测试</h1>
+    <button onclick="testAPI()">测试API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '正在测试...';
+            
+            try {
+                const response = await fetch('http://localhost:8081/api/v1/knowledge/categories?page=0&size=5');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>测试结果</h3>
+                    <p>状态码: ${response.status}</p>
+                    <p>响应数据:</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>错误</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

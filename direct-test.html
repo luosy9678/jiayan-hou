@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直接测试批量更新</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .link { color: blue; text-decoration: underline; cursor: pointer; }
+        .result { margin-top: 15px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>直接测试批量更新头像</h1>
+    
+    <p>点击下面的链接直接测试批量更新接口：</p>
+    
+    <div class="link" onclick="testDefault()">1. 使用默认文件名测试批量更新</div>
+    <br>
+    <div class="link" onclick="testCustom()">2. 使用自定义文件名测试批量更新</div>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        function testDefault() {
+            const url = 'http://localhost:8081/api/v1/admin/test-batch-update-avatars';
+            window.open(url, '_blank');
+            document.getElementById('result').innerHTML = '已在新窗口打开测试链接，请查看结果';
+        }
+        
+        function testCustom() {
+            const customName = prompt('请输入头像文件名:', 'avatar_42_1754228678367_22db36a6.png');
+            if (customName) {
+                const url = `http://localhost:8081/api/v1/admin/test-batch-update-avatars?avatarFileName=${encodeURIComponent(customName)}`;
+                window.open(url, '_blank');
+                document.getElementById('result').innerHTML = '已在新窗口打开测试链接，请查看结果';
+            }
+        }
+    </script>
+</body>
+</html> 

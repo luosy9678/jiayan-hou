@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试获取最后一次吸烟记录</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .record-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .record-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .record-info p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+        
+        .record-info strong {
+            color: #495057;
+        }
+        
+        .no-record {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .count-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .count-info h3 {
+            margin-top: 0;
+            color: #0c5460;
+        }
+        
+        .count-info .count-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 20px 0;
+        }
+        
+        .delete-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .delete-success h3 {
+            margin-top: 0;
+            color: #155724;
+        }
+        
+        .error-details {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 测试获取最后一次吸烟记录</h1>
+        
+        <div class="form-group">
+            <label for="token">JWT Token:</label>
+            <input type="text" id="token" placeholder="请输入JWT Token" value="">
+        </div>
+        
+        <div class="form-group">
+            <button class="btn" onclick="getLastSmokingRecord()">获取最后一次吸烟记录</button>
+            <button class="btn btn-success" onclick="getLastTrainingRecord()">获取最后一次训练记录</button>
+            <button class="btn" onclick="getTodaySmokingCount()">获取今日吸烟次数</button>
+            <button class="btn btn-success" onclick="getTodayTrainingCount()">获取今日训练次数</button>
+            <button class="btn btn-danger" onclick="clearResult()">清除结果</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="recordId">记录ID (删除测试):</label>
+            <input type="number" id="recordId" placeholder="请输入要删除的记录ID" min="1">
+            <button class="btn btn-warning" onclick="deleteSmokingRecord()">删除吸烟记录</button>
+            <button class="btn btn-warning" onclick="deleteTrainingRecord()">删除训练记录</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+        
+        <div id="recordInfo" class="record-info" style="display: none;"></div>
+        <div id="noRecord" class="no-record" style="display: none;"></div>
+        <div id="countInfo" class="count-info" style="display: none;"></div>
+        <div id="deleteSuccess" class="delete-success" style="display: none;"></div>
+        <div id="errorDetails" class="error-details" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081';
+        
+        // 获取最后一次吸烟记录
+        async function getLastSmokingRecord() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取最后一次吸烟记录...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/smoking/last`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    if (result.data) {
+                        showResult('获取成功！', 'success');
+                        showRecordInfo(result.data, '吸烟');
+                    } else {
+                        showResult('暂无吸烟记录', 'info');
+                        showNoRecord('吸烟');
+                    }
+                } else {
+                    showResult(`获取失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('获取异常:', error);
+                showResult(`获取异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 获取最后一次训练记录
+        async function getLastTrainingRecord() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取最后一次训练记录...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/training/last`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    if (result.data) {
+                        showResult('获取成功！', 'success');
+                        showRecordInfo(result.data, '训练');
+                    } else {
+                        showResult('暂无训练记录', 'info');
+                        showNoRecord('训练');
+                    }
+                } else {
+                    showResult(`获取失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('获取异常:', error);
+                showResult(`获取异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 获取今日吸烟次数
+        async function getTodaySmokingCount() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取今日吸烟次数...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/smoking/today-count`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showResult('获取成功！', 'success');
+                    showCountInfo(result.data, '吸烟');
+                } else {
+                    showResult(`获取失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('获取异常:', error);
+                showResult(`获取异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 获取今日训练次数
+        async function getTodayTrainingCount() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取今日训练次数...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/training/today-count`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showResult('获取成功！', 'success');
+                    showCountInfo(result.data, '训练');
+                } else {
+                    showResult(`获取失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('获取异常:', error);
+                showResult(`获取异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 删除吸烟记录
+        async function deleteSmokingRecord() {
+            const token = document.getElementById('token').value.trim();
+            const recordId = document.getElementById('recordId').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            if (!recordId) {
+                showResult('请输入要删除的记录ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在删除吸烟记录...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/smoking/${recordId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showResult('删除成功！', 'success');
+                    showDeleteSuccess('吸烟记录', recordId);
+                } else {
+                    showResult(`删除失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('删除异常:', error);
+                showResult(`删除异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 删除训练记录
+        async function deleteTrainingRecord() {
+            const token = document.getElementById('token').value.trim();
+            const recordId = document.getElementById('recordId').value.trim();
+            
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+            
+            if (!recordId) {
+                showResult('请输入要删除的记录ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在删除训练记录...', 'info');
+                hideAllInfo();
+                
+                const response = await fetch(`${API_BASE}/records/training/${recordId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showResult('删除成功！', 'success');
+                    showDeleteSuccess('训练记录', recordId);
+                } else {
+                    showResult(`删除失败: ${result.message}`, 'error');
+                    showErrorDetails(result);
+                }
+                
+            } catch (error) {
+                console.error('删除异常:', error);
+                showResult(`删除异常: ${error.message}`, 'error');
+                showErrorDetails({ error: error.message, stack: error.stack });
+            }
+        }
+        
+        // 显示结果
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        // 显示记录信息
+        function showRecordInfo(record, type) {
+            const recordInfoDiv = document.getElementById('recordInfo');
+            recordInfoDiv.innerHTML = `
+                <h3>📝 最后一次${type}记录</h3>
+                <p><strong>记录ID:</strong> ${record.recordId || record.id || 'N/A'}</p>
+                <p><strong>时间:</strong> ${record.timestamp || 'N/A'}</p>
+                ${type === '吸烟' ? 
+                    `<p><strong>支数:</strong> ${record.cigaretteCount || 'N/A'}</p>` : 
+                    `<p><strong>时长:</strong> ${record.duration || 'N/A'}秒</p>
+                     <p><strong>音频类型:</strong> ${record.audioType || 'N/A'}</p>
+                     <p><strong>是否完成:</strong> ${record.completed ? '是' : '否'}</p>`
+                }
+                <p><strong>备注:</strong> ${record.note || '无'}</p>
+                <p><strong>创建时间:</strong> ${record.createdAt || 'N/A'}</p>
+            `;
+            recordInfoDiv.style.display = 'block';
+        }
+        
+        // 显示无记录信息
+        function showNoRecord(type) {
+            const noRecordDiv = document.getElementById('noRecord');
+            noRecordDiv.innerHTML = `
+                <h3>📭 暂无${type}记录</h3>
+                <p>该用户还没有创建过${type}记录</p>
+            `;
+            noRecordDiv.style.display = 'block';
+        }
+        
+        // 显示统计信息
+        function showCountInfo(count, type) {
+            const countInfoDiv = document.getElementById('countInfo');
+            countInfoDiv.innerHTML = `
+                <h3>📊 ${type}统计</h3>
+                <div class="count-number">${count || 0}</div>
+                <p>今日${type}次数</p>
+            `;
+            countInfoDiv.style.display = 'block';
+        }
+        
+        // 显示错误详情
+        function showErrorDetails(result) {
+            const errorDetailsDiv = document.getElementById('errorDetails');
+            errorDetailsDiv.innerHTML = `
+                <h3>❌ 错误详情</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            errorDetailsDiv.style.display = 'block';
+        }
+        
+        // 隐藏所有信息
+        function hideAllInfo() {
+            document.getElementById('recordInfo').style.display = 'none';
+            document.getElementById('noRecord').style.display = 'none';
+            document.getElementById('errorDetails').style.display = 'none';
+            document.getElementById('countInfo').style.display = 'none';
+            document.getElementById('deleteSuccess').style.display = 'none';
+        }
+        
+        // 清除结果
+        function clearResult() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('recordInfo').style.display = 'none';
+            document.getElementById('noRecord').style.display = 'none';
+            document.getElementById('errorDetails').style.display = 'none';
+            document.getElementById('countInfo').style.display = 'none';
+            document.getElementById('deleteSuccess').style.display = 'none';
+            document.getElementById('token').value = '';
+        }
+        
+        // 显示删除成功信息
+        function showDeleteSuccess(type, recordId) {
+            const deleteSuccessDiv = document.getElementById('deleteSuccess');
+            deleteSuccessDiv.innerHTML = `
+                <h3>✅ 删除成功</h3>
+                <p>记录ID ${recordId} 的 ${type} 记录已删除。</p>
+            `;
+            deleteSuccessDiv.style.display = 'block';
+        }
+        
+        // 页面加载完成后自动填充测试Token
+        window.addEventListener('load', function() {
+            // 从localStorage获取上次使用的Token
+            const lastToken = localStorage.getItem('testToken');
+            if (lastToken) {
+                document.getElementById('token').value = lastToken;
+            }
+        });
+        
+        // 保存Token到localStorage
+        document.getElementById('token').addEventListener('input', function() {
+            const token = this.value.trim();
+            if (token) {
+                localStorage.setItem('testToken', token);
+            }
+        });
+    </script>
+</body>
+</html> 

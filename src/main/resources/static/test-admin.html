@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试管理后台功能</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <h1>测试管理后台功能</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试仪表盘API</h3>
+        <button class="btn" onclick="testDashboardAPI()">测试仪表盘API</button>
+        <div id="dashboardResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 测试分类API</h3>
+        <button class="btn" onclick="testCategoryAPI()">测试分类API</button>
+        <div id="categoryResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 测试JavaScript错误</h3>
+        <button class="btn" onclick="testJavaScript()">测试JavaScript</button>
+        <div id="jsResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 跳转到管理后台</h3>
+        <button class="btn" onclick="window.open('/admin.html', '_blank')">打开管理后台</button>
+    </div>
+    
+    <script>
+        // 捕获所有JavaScript错误
+        window.onerror = function(msg, url, line, col, error) {
+            console.error('JavaScript错误:', msg, '在', url, '第', line, '行');
+            document.getElementById('jsResult').innerHTML = '<div class="error">JavaScript错误: ' + msg + ' (第' + line + '行)</div>';
+            return true;
+        };
+        
+        async function testDashboardAPI() {
+            try {
+                const response = await fetch('/api/v1/admin/stats');
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    document.getElementById('dashboardResult').innerHTML = 
+                        '<div class="success">仪表盘API正常</div><pre>' + JSON.stringify(data.data, null, 2) + '</pre>';
+                } else {
+                    document.getElementById('dashboardResult').innerHTML = 
+                        '<div class="error">API返回错误: ' + data.message + '</div>';
+                }
+            } catch (error) {
+                document.getElementById('dashboardResult').innerHTML = 
+                    '<div class="error">请求失败: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testCategoryAPI() {
+            try {
+                const response = await fetch('/api/v1/knowledge/categories');
+                const data = await response.json();
+                
+                if (data.content && Array.isArray(data.content)) {
+                    document.getElementById('categoryResult').innerHTML = 
+                        '<div class="success">分类API正常，共' + data.content.length + '个分类</div>';
+                } else {
+                    document.getElementById('categoryResult').innerHTML = 
+                        '<div class="error">分类API数据格式错误</div>';
+                }
+            } catch (error) {
+                document.getElementById('categoryResult').innerHTML = 
+                    '<div class="error">请求失败: ' + error.message + '</div>';
+            }
+        }
+        
+        function testJavaScript() {
+            try {
+                // 测试基本JavaScript功能
+                const testObj = { name: 'test', value: 123 };
+                const testArray = [1, 2, 3];
+                const testFunction = () => 'test';
+                
+                document.getElementById('jsResult').innerHTML = 
+                    '<div class="success">JavaScript基本功能正常</div>';
+            } catch (error) {
+                document.getElementById('jsResult').innerHTML = 
+                    '<div class="error">JavaScript错误: ' + error.message + '</div>';
+            }
+        }
+        
+        // 页面加载完成后自动测试
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('测试页面加载完成');
+            testJavaScript();
+        });
+    </script>
+</body>
+</html>

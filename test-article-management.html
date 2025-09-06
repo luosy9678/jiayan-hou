@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章管理功能测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .error {
+            border-left-color: #e74c3c;
+            background: #fdf2f2;
+        }
+        .success {
+            border-left-color: #27ae60;
+            background: #f0f9f0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文章管理功能测试</h1>
+        <p>此页面用于测试后台管理系统的文章管理功能，包括增删查改和权限管理。</p>
+        
+        <div class="test-section">
+            <h3>1. 文章列表查询测试</h3>
+            <button class="btn btn-primary" onclick="testGetArticles()">获取文章列表</button>
+            <button class="btn btn-primary" onclick="testGetArticlesByCategory()">按分类获取文章</button>
+            <button class="btn btn-primary" onclick="testSearchArticles()">搜索文章</button>
+            <div id="articlesResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 文章详情测试</h3>
+            <input type="number" id="articleId" placeholder="输入文章ID" style="padding: 8px; margin-right: 10px;">
+            <button class="btn btn-primary" onclick="testGetArticle()">获取文章详情</button>
+            <div id="articleDetailResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 文章创建测试</h3>
+            <button class="btn btn-success" onclick="testCreateArticle()">创建测试文章</button>
+            <div id="createResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 文章更新测试</h3>
+            <input type="number" id="updateArticleId" placeholder="输入要更新的文章ID" style="padding: 8px; margin-right: 10px;">
+            <button class="btn btn-warning" onclick="testUpdateArticle()">更新文章</button>
+            <div id="updateResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. 文章状态管理测试</h3>
+            <input type="number" id="statusArticleId" placeholder="输入文章ID" style="padding: 8px; margin-right: 10px;">
+            <button class="btn btn-warning" onclick="testToggleArticleStatus()">切换发布状态</button>
+            <button class="btn btn-warning" onclick="testAuditArticle()">审核文章</button>
+            <div id="statusResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>6. 文章删除测试</h3>
+            <input type="number" id="deleteArticleId" placeholder="输入要删除的文章ID" style="padding: 8px; margin-right: 10px;">
+            <button class="btn btn-danger" onclick="testDeleteArticle()">删除文章</button>
+            <div id="deleteResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>7. 分类管理测试</h3>
+            <button class="btn btn-primary" onclick="testGetCategories()">获取分类列表</button>
+            <button class="btn btn-success" onclick="testCreateCategory()">创建测试分类</button>
+            <div id="categoryResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        
+        // 显示结果
+        function showResult(elementId, content, isError = false, isSuccess = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'result' + (isError ? ' error' : '') + (isSuccess ? ' success' : '');
+            element.innerHTML = content;
+        }
+        
+        // 1. 文章列表查询测试
+        async function testGetArticles() {
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles?page=0&size=10`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('articlesResult', `
+                        <h4>✅ 获取文章列表成功</h4>
+                        <p>总数: ${data.totalElements || 0}</p>
+                        <p>当前页: ${data.number + 1 || 1}</p>
+                        <p>每页大小: ${data.size || 10}</p>
+                        <p>文章数量: ${(data.content || []).length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('articlesResult', `
+                        <h4>❌ 获取文章列表失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('articlesResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        async function testGetArticlesByCategory() {
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/by-category/1?page=0&size=10`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('articlesResult', `
+                        <h4>✅ 按分类获取文章成功</h4>
+                        <p>分类ID: 1</p>
+                        <p>文章数量: ${(data.content || []).length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('articlesResult', `
+                        <h4>❌ 按分类获取文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('articlesResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        async function testSearchArticles() {
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/search?keyword=戒烟&page=0&size=10`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('articlesResult', `
+                        <h4>✅ 搜索文章成功</h4>
+                        <p>关键词: 戒烟</p>
+                        <p>结果数量: ${(data.content || []).length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('articlesResult', `
+                        <h4>❌ 搜索文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('articlesResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 2. 文章详情测试
+        async function testGetArticle() {
+            const articleId = document.getElementById('articleId').value;
+            if (!articleId) {
+                alert('请输入文章ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/${articleId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('articleDetailResult', `
+                        <h4>✅ 获取文章详情成功</h4>
+                        <p><strong>标题:</strong> ${data.title}</p>
+                        <p><strong>分类:</strong> ${data.category?.name || '-'}</p>
+                        <p><strong>作者:</strong> ${data.author?.nickname || '-'}</p>
+                        <p><strong>状态:</strong> ${data.status}</p>
+                        <p><strong>审核状态:</strong> ${data.auditStatus}</p>
+                        <p><strong>浏览次数:</strong> ${data.viewCount || 0}</p>
+                        <p><strong>点赞数:</strong> ${data.likeCount || 0}</p>
+                        <p><strong>评分:</strong> ${data.ratingScore || '-'}</p>
+                        <p><strong>创建时间:</strong> ${data.createdAt}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('articleDetailResult', `
+                        <h4>❌ 获取文章详情失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('articleDetailResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 3. 文章创建测试
+        async function testCreateArticle() {
+            const testArticle = {
+                title: "测试文章 - " + new Date().toLocaleString(),
+                content: "<h2>这是一篇测试文章</h2><p>内容包含HTML标签，用于测试富文本编辑器功能。</p><ul><li>测试列表项1</li><li>测试列表项2</li></ul>",
+                categoryId: 1,
+                source: "测试来源",
+                status: "DRAFT",
+                auditStatus: "PENDING"
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testArticle)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('createResult', `
+                        <h4>✅ 创建文章成功</h4>
+                        <p>文章ID: ${data.id || '未知'}</p>
+                        <p>标题: ${testArticle.title}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('createResult', `
+                        <h4>❌ 创建文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('createResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 4. 文章更新测试
+        async function testUpdateArticle() {
+            const articleId = document.getElementById('updateArticleId').value;
+            if (!articleId) {
+                alert('请输入文章ID');
+                return;
+            }
+            
+            const updateData = {
+                title: "更新后的文章标题 - " + new Date().toLocaleString(),
+                content: "<h2>这是更新后的文章内容</h2><p>内容已更新，包含新的HTML标签。</p>",
+                source: "更新后的来源"
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/${articleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('updateResult', `
+                        <h4>✅ 更新文章成功</h4>
+                        <p>文章ID: ${articleId}</p>
+                        <p>新标题: ${updateData.title}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('updateResult', `
+                        <h4>❌ 更新文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('updateResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 5. 文章状态管理测试
+        async function testToggleArticleStatus() {
+            const articleId = document.getElementById('statusArticleId').value;
+            if (!articleId) {
+                alert('请输入文章ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/${articleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: "PUBLISHED"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('statusResult', `
+                        <h4>✅ 切换文章状态成功</h4>
+                        <p>文章ID: ${articleId}</p>
+                        <p>新状态: PUBLISHED</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('statusResult', `
+                        <h4>❌ 切换文章状态失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('statusResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        async function testAuditArticle() {
+            const articleId = document.getElementById('statusArticleId').value;
+            if (!articleId) {
+                alert('请输入文章ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/${articleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        auditStatus: "APPROVED",
+                        auditComment: "测试审核通过"
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('statusResult', `
+                        <h4>✅ 审核文章成功</h4>
+                        <p>文章ID: ${articleId}</p>
+                        <p>审核状态: APPROVED</p>
+                        <p>审核意见: 测试审核通过</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('statusResult', `
+                        <h4>❌ 审核文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('statusResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 6. 文章删除测试
+        async function testDeleteArticle() {
+            const articleId = document.getElementById('deleteArticleId').value;
+            if (!articleId) {
+                alert('请输入文章ID');
+                return;
+            }
+            
+            if (!confirm(`确定要删除文章ID为 ${articleId} 的文章吗？此操作不可恢复！`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/articles/${articleId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.status === 204 || response.ok) {
+                    showResult('deleteResult', `
+                        <h4>✅ 删除文章成功</h4>
+                        <p>文章ID: ${articleId}</p>
+                        <p>状态码: ${response.status}</p>
+                    `, false, true);
+                } else {
+                    const data = await response.json();
+                    showResult('deleteResult', `
+                        <h4>❌ 删除文章失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('deleteResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        // 7. 分类管理测试
+        async function testGetCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/categories?page=0&size=20`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('categoryResult', `
+                        <h4>✅ 获取分类列表成功</h4>
+                        <p>总数: ${data.totalElements || 0}</p>
+                        <p>分类数量: ${(data.content || []).length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('categoryResult', `
+                        <h4>❌ 获取分类列表失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('categoryResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+        
+        async function testCreateCategory() {
+            const testCategory = {
+                name: "测试分类 - " + new Date().toLocaleString(),
+                description: "这是一个测试分类，用于测试分类管理功能",
+                parentId: null,
+                sortOrder: 999,
+                accessLevel: "free",
+                memberOnly: false,
+                isActive: true
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/knowledge/categories`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testCategory)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('categoryResult', `
+                        <h4>✅ 创建分类成功</h4>
+                        <p>分类ID: ${data.id || '未知'}</p>
+                        <p>分类名称: ${testCategory.name}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, false, true);
+                } else {
+                    showResult('categoryResult', `
+                        <h4>❌ 创建分类失败</h4>
+                        <p>状态码: ${response.status}</p>
+                        <p>错误信息: ${data.message || '未知错误'}</p>
+                    `, true);
+                }
+            } catch (error) {
+                showResult('categoryResult', `
+                    <h4>❌ 请求失败</h4>
+                    <p>错误: ${error.message}</p>
+                `, true);
+            }
+        }
+    </script>
+</body>
+</html> 

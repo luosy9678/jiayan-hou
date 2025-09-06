@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试更新日记</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .diary-preview {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .diary-field {
+            margin-bottom: 8px;
+        }
+        .diary-field strong {
+            color: #495057;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 5px 0;
+        }
+        .tag {
+            background-color: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #495057;
+        }
+        .images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .image-item {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+            min-width: 200px;
+        }
+        .image-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .mood-score {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mood-emoji {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>测试更新日记</h1>
+        <p>测试新开发的更新日记接口 <code>PUT /api/v1/diary/{id}</code></p>
+        
+        <div class="form-group">
+            <label for="token">Bearer Token:</label>
+            <input type="text" id="token" placeholder="输入Bearer Token" style="width: 100%;">
+        </div>
+        
+        <div class="form-group">
+            <label for="diaryId">日记ID:</label>
+            <input type="number" id="diaryId" placeholder="输入要更新的日记ID" value="1">
+        </div>
+        
+        <div class="form-group">
+            <label for="content">日记内容:</label>
+            <textarea id="content" placeholder="输入新的日记内容..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="tags">标签 (用逗号分隔):</label>
+            <input type="text" id="tags" placeholder="减量,坚持,进步">
+        </div>
+        
+        <div class="form-group">
+            <label for="moodScore">心情评分:</label>
+            <select id="moodScore">
+                <option value="">不修改</option>
+                <option value="1">1分 - 😞 很差</option>
+                <option value="2">2分 - 😕 不好</option>
+                <option value="3">3分 - 😐 一般</option>
+                <option value="4">4分 - 🙂 不错</option>
+                <option value="5">5分 - 😊 很好</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="status">日记状态:</label>
+            <select id="status">
+                <option value="">不修改</option>
+                <option value="草稿">草稿</option>
+                <option value="已发布">已发布</option>
+                <option value="已归档">已归档</option>
+                <option value="已删除">已删除</option>
+            </select>
+        </div>
+        
+        <div>
+            <button onclick="testUpdateDiary()">更新日记</button>
+            <button onclick="testGetDiaryDetail()" class="secondary">获取日记详情</button>
+            <button onclick="testCreateDiary()" class="secondary">创建测试日记</button>
+            <button onclick="clearForm()" class="secondary">清空表单</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1/diary';
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+        
+        function showDiaryDetail(diary) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result success';
+            
+            let html = `
+                <h3>日记详情</h3>
+                <div class="diary-preview">
+                    <div class="diary-field"><strong>日记ID:</strong> ${diary.id}</div>
+                    <div class="diary-field"><strong>用户ID:</strong> ${diary.userId}</div>
+                    <div class="diary-field"><strong>记录日期:</strong> ${diary.recordDate}</div>
+                    <div class="diary-field"><strong>记录时间:</strong> ${diary.recordTime}</div>
+                    <div class="diary-field"><strong>内容:</strong> ${diary.content}</div>
+                    <div class="diary-field"><strong>字数:</strong> ${diary.wordCount}</div>
+                    <div class="diary-field"><strong>状态:</strong> ${diary.status}</div>
+            `;
+            
+            if (diary.moodScore) {
+                const emoji = getMoodEmoji(diary.moodScore);
+                html += `<div class="diary-field"><strong>心情评分:</strong> ${diary.moodScore}/5 ${emoji}</div>`;
+            }
+            
+            if (diary.tags && diary.tags.length > 0) {
+                html += `<div class="diary-field"><strong>标签:</strong> <div class="tags">`;
+                diary.tags.forEach(tag => {
+                    html += `<span class="tag">${tag}</span>`;
+                });
+                html += `</div></div>`;
+            }
+            
+            if (diary.images && diary.images.length > 0) {
+                html += `<div class="diary-field"><strong>图片 (${diary.images.length}张):</strong> <div class="images">`;
+                diary.images.forEach(image => {
+                    html += `
+                        <div class="image-item">
+                            <img src="${BASE_URL.replace('/diary', '')}${image.fileUrl}" alt="${image.originalName}" onerror="this.style.display='none'">
+                            <div><strong>文件名:</strong> ${image.originalName}</div>
+                            <div><strong>大小:</strong> ${(image.fileSize / 1024).toFixed(1)} KB</div>
+                            <div><strong>上传时间:</strong> ${image.uploadTime}</div>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+            
+            if (diary.isForwarded) {
+                html += `<div class="diary-field"><strong>已转发到论坛:</strong> 是</div>`;
+                if (diary.forumSection) {
+                    html += `<div class="diary-field"><strong>论坛版块:</strong> ${diary.forumSection}</div>`;
+                }
+            }
+            
+            html += `
+                    <div class="diary-field"><strong>创建时间:</strong> ${diary.createdAt}</div>
+                    <div class="diary-field"><strong>更新时间:</strong> ${diary.updatedAt}</div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        function getMoodEmoji(score) {
+            const emojis = ['', '😞', '😕', '😐', '🙂', '😊'];
+            return emojis[score] || '';
+        }
+        
+        async function testUpdateDiary() {
+            const token = document.getElementById('token').value.trim();
+            const diaryId = document.getElementById('diaryId').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const tags = document.getElementById('tags').value.trim();
+            const moodScore = document.getElementById('moodScore').value;
+            const status = document.getElementById('status').value;
+            
+            if (!token) {
+                showResult('请输入Bearer Token', 'error');
+                return;
+            }
+            
+            if (!diaryId) {
+                showResult('请输入日记ID', 'error');
+                return;
+            }
+            
+            // 构建更新请求数据
+            const updateData = {};
+            
+            if (content) {
+                updateData.content = content;
+            }
+            
+            if (tags) {
+                updateData.tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+            }
+            
+            if (moodScore) {
+                updateData.moodScore = parseInt(moodScore);
+            }
+            
+            if (status) {
+                updateData.status = status;
+            }
+            
+            // 如果没有要更新的内容
+            if (Object.keys(updateData).length === 0) {
+                showResult('请至少填写一个要更新的字段', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在更新日记...', 'info');
+                
+                const response = await axios.put(`${BASE_URL}/${diaryId}`, updateData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('更新日记响应:', response.data);
+                showResult(`✅ 日记更新成功！\n\n${response.data}`, 'success');
+                
+                // 清空表单
+                clearForm();
+                
+            } catch (error) {
+                console.error('更新日记失败:', error);
+                let errorMessage = '❌ 更新日记失败';
+                
+                if (error.response) {
+                    errorMessage += `\n状态码: ${error.response.status}`;
+                    if (error.response.data) {
+                        errorMessage += `\n响应数据: ${JSON.stringify(error.response.data, null, 2)}`;
+                    }
+                } else if (error.message) {
+                    errorMessage += `\n错误信息: ${error.message}`;
+                }
+                
+                showResult(errorMessage, 'error');
+            }
+        }
+        
+        async function testGetDiaryDetail() {
+            const token = document.getElementById('token').value.trim();
+            const diaryId = document.getElementById('diaryId').value.trim();
+            
+            if (!token) {
+                showResult('请输入Bearer Token', 'error');
+                return;
+            }
+            
+            if (!diaryId) {
+                showResult('请输入日记ID', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在获取日记详情...', 'info');
+                
+                const response = await axios.get(`${BASE_URL}/${diaryId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('日记详情响应:', response.data);
+                showDiaryDetail(response.data);
+                
+            } catch (error) {
+                console.error('获取日记详情失败:', error);
+                let errorMessage = '❌ 获取日记详情失败';
+                
+                if (error.response) {
+                    errorMessage += `\n状态码: ${error.response.status}`;
+                    if (error.response.data) {
+                        errorMessage += `\n响应数据: ${JSON.stringify(error.response.data, null, 2)}`;
+                    }
+                } else if (error.message) {
+                    errorMessage += `\n错误信息: ${error.message}`;
+                }
+                
+                showResult(errorMessage, 'error');
+            }
+        }
+        
+        async function testCreateDiary() {
+            const token = document.getElementById('token').value.trim();
+            
+            if (!token) {
+                showResult('请输入Bearer Token', 'error');
+                return;
+            }
+            
+            try {
+                showResult('正在创建测试日记...', 'info');
+                
+                const diaryData = {
+                    content: "这是一篇测试日记，用于测试更新功能。",
+                    tags: ["测试", "日记", "更新功能"],
+                    images: []
+                };
+                
+                const response = await axios.post(`${BASE_URL}/create`, diaryData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('创建日记响应:', response.data);
+                
+                // 从响应中提取日记ID
+                const responseText = response.data;
+                const idMatch = responseText.match(/日记ID: (\d+)/);
+                if (idMatch) {
+                    const diaryId = idMatch[1];
+                    document.getElementById('diaryId').value = diaryId;
+                    showResult(`✅ 测试日记创建成功！\n日记ID: ${diaryId}\n\n现在可以点击"获取日记详情"来查看这篇日记，然后进行更新测试。`, 'success');
+                } else {
+                    showResult('✅ 日记创建成功，但无法获取日记ID', 'success');
+                }
+                
+            } catch (error) {
+                console.error('创建日记失败:', error);
+                let errorMessage = '❌ 创建日记失败';
+                
+                if (error.response) {
+                    errorMessage += `\n状态码: ${error.response.status}`;
+                    if (error.response.data) {
+                        errorMessage += `\n响应数据: ${error.response.data}`;
+                    }
+                } else if (error.message) {
+                    errorMessage += `\n错误信息: ${error.message}`;
+                }
+                
+                showResult(errorMessage, 'error');
+            }
+        }
+        
+        function clearForm() {
+            document.getElementById('content').value = '';
+            document.getElementById('tags').value = '';
+            document.getElementById('moodScore').value = '';
+            document.getElementById('status').value = '';
+            document.getElementById('result').innerHTML = '';
+        }
+        
+        // 页面加载完成后的提示
+        window.onload = function() {
+            showResult('请先输入Bearer Token，然后可以：\n1. 先创建一篇测试日记\n2. 获取日记详情查看当前状态\n3. 填写要更新的字段\n4. 点击"更新日记"进行测试', 'info');
+        };
+    </script>
+</body>
+</html> 

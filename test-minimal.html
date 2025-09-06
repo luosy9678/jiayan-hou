@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试MinimalController</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .error { background: #ffe6e6; color: #d00; }
+        .success { background: #e6ffe6; color: #0a0; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>测试MinimalController</h1>
+    
+    <div>
+        <h3>测试MinimalController</h3>
+        <button onclick="testMinimal()">测试MinimalController</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        async function testMinimal() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '测试中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch('http://localhost:8081/minimal');
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ MinimalController测试成功!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${text}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ MinimalController测试失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            状态文本: ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载时自动测试
+        window.onload = function() {
+            testMinimal();
+        };
+    </script>
+</body>
+</html> 

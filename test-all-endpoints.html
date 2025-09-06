@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试所有接口</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>测试所有接口</h1>
+    
+    <button onclick="testAll()">测试所有接口</button>
+    <button onclick="clearResults()">清除结果</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080/api/v1/test';
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function testEndpoint(name, url, method = 'GET', body = null) {
+            try {
+                const options = { method };
+                if (body) {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ ${name}: ${result}`, 'success');
+                } else {
+                    addResult(`❌ ${name}: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ ${name}: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAll() {
+            addResult('开始测试所有接口...', 'info');
+            
+            // 测试基础接口
+            await testEndpoint('基础连接', `${BASE_URL}/hello`);
+            await testEndpoint('日记状态', `${BASE_URL}/diary-status`);
+            
+            // 测试日记接口
+            await testEndpoint('日记创建', `${BASE_URL}/diary/create`, 'POST', '测试日记内容');
+            await testEndpoint('日记列表', `${BASE_URL}/diary/list`);
+            await testEndpoint('日记详情', `${BASE_URL}/diary/detail`);
+            await testEndpoint('日记统计', `${BASE_URL}/diary/stats`);
+            
+            addResult('所有接口测试完成！', 'info');
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // 页面加载完成后自动测试
+        window.addEventListener('load', () => {
+            setTimeout(testAll, 1000);
+        });
+    </script>
+</body>
+</html> 

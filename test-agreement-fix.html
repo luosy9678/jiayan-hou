@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>协议接口修复验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .progress {
+            color: #007bff;
+        }
+        .complete {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 协议接口修复验证</h1>
+        <p>本页面用于验证修复后的协议相关API接口是否正常工作。</p>
+        
+        <div class="test-section">
+            <h3>📋 测试说明</h3>
+            <p><strong>修复内容：</strong></p>
+            <ul>
+                <li>✅ 修复数据库初始化逻辑，确保协议类型和协议内容都能正确创建</li>
+                <li>✅ 添加服务条款的初始化</li>
+                <li>✅ 改进协议检查逻辑，避免重复创建</li>
+            </ul>
+            <p><strong>预期结果：</strong> 所有6个接口都应该成功返回数据</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 接口测试</h3>
+            <button class="test-button" onclick="testAll()">🚀 批量测试所有接口</button>
+            <button class="test-button" onclick="clearResults()">🗑️ 清空结果</button>
+            
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 测试统计</h3>
+            <div id="stats"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let testResults = [];
+        let testCount = 0;
+        let successCount = 0;
+
+        // 测试所有接口
+        async function testAll() {
+            clearResults();
+            testCount = 0;
+            successCount = 0;
+            
+            const tests = [
+                { name: '协议类型列表', url: '/agreements/types' },
+                { name: '用户服务协议', url: '/agreements/user-agreement' },
+                { name: '隐私政策', url: '/agreements/privacy-policy' },
+                { name: '会员协议', url: '/agreements/membership-agreement' },
+                { name: '服务条款', url: '/agreements/terms-of-service' },
+                { name: '协议摘要', url: '/agreements/summary' }
+            ];
+
+            for (const test of tests) {
+                await testEndpoint(test.name, test.url);
+                await new Promise(resolve => setTimeout(resolve, 500)); // 间隔500ms
+            }
+            
+            updateStats();
+        }
+
+        // 测试单个接口
+        async function testEndpoint(name, endpoint) {
+            testCount++;
+            addResult(`🔍 测试 ${name}...`, 'progress');
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    successCount++;
+                    addResult(`✅ ${name}成功 - ${getSuccessMessage(data)}`, 'success');
+                } else {
+                    addResult(`❌ ${name}失败: ${data.message || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ ${name}失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 获取成功消息
+        function getSuccessMessage(data) {
+            if (data.data && Array.isArray(data.data)) {
+                return `成功获取${data.data.length}条数据`;
+            } else if (data.data && typeof data.data === 'object') {
+                return `成功获取${data.data.title || '协议'}数据`;
+            }
+            return '成功获取数据';
+        }
+
+        // 添加结果
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // 更新统计
+        function updateStats() {
+            const statsDiv = document.getElementById('stats');
+            const successRate = testCount > 0 ? ((successCount / testCount) * 100).toFixed(1) : 0;
+            
+            statsDiv.innerHTML = `
+                <div class="status">
+                    📈 测试完成: ${successCount}/${testCount} (${successRate}%)
+                </div>
+                <div class="status">
+                    ${successCount === testCount ? '🎉 所有接口测试通过！' : '⚠️ 部分接口仍有问题'}
+                </div>
+            `;
+        }
+
+        // 清空结果
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('stats').innerHTML = '';
+            testResults = [];
+            testCount = 0;
+            successCount = 0;
+        }
+
+        // 页面加载完成后的提示
+        window.onload = function() {
+            addResult('📱 页面加载完成，请点击"批量测试所有接口"开始测试', 'info');
+            addResult('💡 确保后端服务已启动并运行在8080端口', 'info');
+        };
+    </script>
+</body>
+</html> 

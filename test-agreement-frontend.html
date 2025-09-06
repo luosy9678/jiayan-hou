@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>协议获取接口测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .error { background: #ffe6e6; color: #d00; }
+        .success { background: #e6ffe6; color: #0a0; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        .agreement-content { 
+            max-height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            background: white; 
+            margin: 10px 0;
+        }
+        .agreement-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .agreement-info strong { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>协议获取接口测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 获取用户协议</h3>
+        <button onclick="getUserAgreement()">获取用户协议</button>
+        <div id="userAgreementResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 获取隐私政策</h3>
+        <button onclick="getPrivacyPolicy()">获取隐私政策</button>
+        <div id="privacyPolicyResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 获取会员协议</h3>
+        <button onclick="getMembershipAgreement()">获取会员协议</button>
+        <div id="membershipAgreementResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 获取服务条款</h3>
+        <button onclick="getTermsOfService()">获取服务条款</button>
+        <div id="termsOfServiceResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. 根据类型获取协议</h3>
+        <select id="agreementType">
+            <option value="USER_AGREEMENT">用户协议</option>
+            <option value="PRIVACY_POLICY">隐私政策</option>
+            <option value="MEMBERSHIP_AGREEMENT">会员协议</option>
+            <option value="TERMS_OF_SERVICE">服务条款</option>
+        </select>
+        <button onclick="getAgreementByType()">获取协议</button>
+        <div id="agreementByTypeResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>6. 获取协议类型列表</h3>
+        <button onclick="getAgreementTypes()">获取协议类型列表</button>
+        <div id="agreementTypesResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        
+        async function getUserAgreement() {
+            const resultDiv = document.getElementById('userAgreementResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/user-agreement`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const agreement = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 用户协议获取成功!</strong>
+                            <div class="agreement-info">
+                                <strong>协议ID:</strong> ${agreement.id}<br>
+                                <strong>类型:</strong> ${agreement.typeCode}<br>
+                                <strong>版本:</strong> ${agreement.versionCode}<br>
+                                <strong>标题:</strong> ${agreement.title}<br>
+                                <strong>是否当前版本:</strong> ${agreement.isCurrent ? '是' : '否'}<br>
+                                <strong>创建时间:</strong> ${agreement.createdAt}<br>
+                                <strong>更新时间:</strong> ${agreement.updatedAt}
+                            </div>
+                            <strong>协议内容:</strong>
+                            <div class="agreement-content">${agreement.content || '暂无内容'}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getPrivacyPolicy() {
+            const resultDiv = document.getElementById('privacyPolicyResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/privacy-policy`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const agreement = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 隐私政策获取成功!</strong>
+                            <div class="agreement-info">
+                                <strong>协议ID:</strong> ${agreement.id}<br>
+                                <strong>类型:</strong> ${agreement.typeCode}<br>
+                                <strong>版本:</strong> ${agreement.versionCode}<br>
+                                <strong>标题:</strong> ${agreement.title}<br>
+                                <strong>是否当前版本:</strong> ${agreement.isCurrent ? '是' : '否'}<br>
+                                <strong>创建时间:</strong> ${agreement.createdAt}<br>
+                                <strong>更新时间:</strong> ${agreement.updatedAt}
+                            </div>
+                            <strong>协议内容:</strong>
+                            <div class="agreement-content">${agreement.content || '暂无内容'}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getMembershipAgreement() {
+            const resultDiv = document.getElementById('membershipAgreementResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/membership-agreement`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const agreement = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 会员协议获取成功!</strong>
+                            <div class="agreement-info">
+                                <strong>协议ID:</strong> ${agreement.id}<br>
+                                <strong>类型:</strong> ${agreement.typeCode}<br>
+                                <strong>版本:</strong> ${agreement.versionCode}<br>
+                                <strong>标题:</strong> ${agreement.title}<br>
+                                <strong>是否当前版本:</strong> ${agreement.isCurrent ? '是' : '否'}<br>
+                                <strong>创建时间:</strong> ${agreement.createdAt}<br>
+                                <strong>更新时间:</strong> ${agreement.updatedAt}
+                            </div>
+                            <strong>协议内容:</strong>
+                            <div class="agreement-content">${agreement.content || '暂无内容'}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getTermsOfService() {
+            const resultDiv = document.getElementById('termsOfServiceResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/terms-of-service`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const agreement = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 服务条款获取成功!</strong>
+                            <div class="agreement-info">
+                                <strong>协议ID:</strong> ${agreement.id}<br>
+                                <strong>类型:</strong> ${agreement.typeCode}<br>
+                                <strong>版本:</strong> ${agreement.versionCode}<br>
+                                <strong>标题:</strong> ${agreement.title}<br>
+                                <strong>是否当前版本:</strong> ${agreement.isCurrent ? '是' : '否'}<br>
+                                <strong>创建时间:</strong> ${agreement.createdAt}<br>
+                                <strong>更新时间:</strong> ${agreement.updatedAt}
+                            </div>
+                            <strong>协议内容:</strong>
+                            <div class="agreement-content">${agreement.content || '暂无内容'}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getAgreementByType() {
+            const typeCode = document.getElementById('agreementType').value;
+            const resultDiv = document.getElementById('agreementByTypeResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/${typeCode}`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const agreement = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 协议获取成功!</strong><br>
+                            类型: ${typeCode}
+                            <div class="agreement-info">
+                                <strong>协议ID:</strong> ${agreement.id}<br>
+                                <strong>类型:</strong> ${agreement.typeCode}<br>
+                                <strong>版本:</strong> ${agreement.versionCode}<br>
+                                <strong>标题:</strong> ${agreement.title}<br>
+                                <strong>是否当前版本:</strong> ${agreement.isCurrent ? '是' : '否'}<br>
+                                <strong>创建时间:</strong> ${agreement.createdAt}<br>
+                                <strong>更新时间:</strong> ${agreement.updatedAt}
+                            </div>
+                            <strong>协议内容:</strong>
+                            <div class="agreement-content">${agreement.content || '暂无内容'}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            类型: ${typeCode}<br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function getAgreementTypes() {
+            const resultDiv = document.getElementById('agreementTypesResult');
+            resultDiv.innerHTML = '获取中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/agreements/types`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    const types = data.data;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 协议类型列表获取成功!</strong><br>
+                            协议类型数量: ${types.length}<br>
+                            <strong>协议类型:</strong><br>
+                            <ul>
+                                ${types.map(type => `<li>${type}</li>`).join('')}
+                            </ul>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 获取失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 

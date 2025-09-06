@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库状态检查</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 数据库状态诊断</h1>
+        <p>本页面用于诊断协议数据初始化问题，检查数据库中的实际数据状态。</p>
+        
+        <div class="section">
+            <h3>📊 数据状态检查</h3>
+            <button class="button" onclick="checkAll()">🔍 全面检查</button>
+            <button class="button" onclick="clearResults()">🗑️ 清空结果</button>
+            <div id="results"></div>
+        </div>
+
+        <div class="section">
+            <h3>📋 检查项目</h3>
+            <ul>
+                <li><strong>协议类型表</strong>：检查 agreement_types 表是否有数据</li>
+                <li><strong>协议内容表</strong>：检查 agreements 表是否有数据</li>
+                <li><strong>数据关联</strong>：检查协议类型和内容的关联关系</li>
+                <li><strong>初始化状态</strong>：检查 SimpleDataInitializer 是否执行</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        
+        async function checkAll() {
+            clearResults();
+            addResult('🔍 开始全面检查数据库状态...', 'info');
+            
+            // 1. 检查协议类型
+            await checkAgreementTypes();
+            
+            // 2. 检查协议内容
+            await checkAgreements();
+            
+            // 3. 检查具体协议
+            await checkSpecificAgreements();
+            
+            // 4. 总结
+            await summarizeResults();
+        }
+        
+        async function checkAgreementTypes() {
+            addResult('\n📋 检查协议类型表...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/agreements/types`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    addResult(`✅ 协议类型表正常，共${data.data.length}条记录:`, 'success');
+                    data.data.forEach((type, index) => {
+                        addResult(`   ${index + 1}. ${type.typeName} (${type.typeCode})`, 'success');
+                    });
+                } else {
+                    addResult(`❌ 协议类型表异常: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 检查协议类型表失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAgreements() {
+            addResult('\n📄 检查协议内容表...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/agreements/summary`);
+                const data = await response.json();
+                
+                if (response.ok && data.code === 200) {
+                    addResult(`✅ 协议摘要正常，共${data.data.totalCount}个协议:`, 'success');
+                    data.data.agreements.forEach((agreement, index) => {
+                        addResult(`   ${index + 1}. ${agreement.type} - ${agreement.version}`, 'success');
+                    });
+                } else {
+                    addResult(`❌ 协议摘要异常: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 检查协议摘要失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkSpecificAgreements() {
+            addResult('\n🔍 检查具体协议内容...', 'info');
+            
+            const agreements = [
+                { name: '用户服务协议', url: '/agreements/user-agreement' },
+                { name: '隐私政策', url: '/agreements/privacy-policy' },
+                { name: '会员协议', url: '/agreements/membership-agreement' },
+                { name: '服务条款', url: '/agreements/terms-of-service' }
+            ];
+            
+            for (const agreement of agreements) {
+                try {
+                    const response = await fetch(`${API_BASE}${agreement.url}`);
+                    const data = await response.json();
+                    
+                    if (response.ok && data.code === 200) {
+                        addResult(`✅ ${agreement.name}: 正常`, 'success');
+                    } else {
+                        addResult(`❌ ${agreement.name}: ${data.message}`, 'error');
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 200)); // 间隔200ms
+                } catch (error) {
+                    addResult(`❌ ${agreement.name}: 请求失败 - ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function summarizeResults() {
+            addResult('\n📊 检查完成，分析结果...', 'info');
+            
+            // 等待一下让所有检查完成
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const results = document.getElementById('results');
+            const successCount = results.querySelectorAll('.success').length;
+            const errorCount = results.querySelectorAll('.error').length;
+            
+            if (errorCount === 0) {
+                addResult('🎉 所有检查项目都正常！数据库初始化成功。', 'success');
+            } else if (successCount > 0) {
+                addResult(`⚠️ 部分检查项目异常。成功: ${successCount}, 失败: ${errorCount}`, 'warning');
+                addResult('💡 建议：检查 SimpleDataInitializer 是否正确执行', 'warning');
+            } else {
+                addResult('❌ 所有检查项目都失败！数据库可能没有初始化。', 'error');
+                addResult('🚨 紧急：需要手动触发数据库初始化', 'error');
+            }
+        }
+        
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+            
+            // 自动滚动到底部
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // 页面加载完成后的提示
+        window.onload = function() {
+            addResult('📱 页面加载完成，请点击"全面检查"开始诊断', 'info');
+            addResult('💡 确保后端服务已启动并运行在8080端口', 'info');
+        };
+    </script>
+</body>
+</html> 

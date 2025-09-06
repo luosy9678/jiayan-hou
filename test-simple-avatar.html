@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单头像测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 15px; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f0f0f0; white-space: pre-wrap; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>简单头像测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试头像下载（使用可靠的测试URL）</h3>
+        <input type="text" id="testUrl" placeholder="测试URL" value="https://httpbin.org/image/jpeg">
+        <button onclick="testAvatarDownload()">测试头像下载</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试第三方登录（带头像）</h3>
+        <button onclick="testThirdPartyLogin()">测试第三方登录</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 测试文件上传</h3>
+        <input type="file" id="avatarFile" accept="image/*">
+        <button onclick="testFileUpload()">测试文件上传</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+
+        async function testAvatarDownload() {
+            const resultDiv = document.getElementById('result1');
+            const testUrl = document.getElementById('testUrl').value;
+            
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/avatar/download`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM1Njg5NjAwfQ.example'
+                    },
+                    body: `avatarUrl=${encodeURIComponent(testUrl)}`
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = `头像下载测试结果:\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `头像下载测试失败: ${error.message}`;
+            }
+        }
+
+        async function testThirdPartyLogin() {
+            const resultDiv = document.getElementById('result2');
+            const testUrl = document.getElementById('testUrl').value;
+            
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/third-party/bind`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        platform: 'wechat',
+                        openid: 'test_openid_' + Date.now(),
+                        nickname: '测试用户',
+                        avatar: testUrl
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = `第三方登录测试结果:\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `第三方登录测试失败: ${error.message}`;
+            }
+        }
+
+        async function testFileUpload() {
+            const resultDiv = document.getElementById('result3');
+            const fileInput = document.getElementById('avatarFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                resultDiv.textContent = '请选择文件';
+                return;
+            }
+            
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/avatar/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM1Njg5NjAwfQ.example'
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = `文件上传测试结果:\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultDiv.textContent = `文件上传测试失败: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> 

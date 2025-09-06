@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查启动日志</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .error { background: #ffe6e6; color: #d00; }
+        .success { background: #e6ffe6; color: #0a0; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>检查Spring Boot启动日志</h1>
+    
+    <div class="section">
+        <h3>1. 检查基本连接</h3>
+        <button onclick="checkBasicConnection()">检查基本连接</button>
+        <div id="basicResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>2. 检查所有已知路径</h3>
+        <button onclick="checkAllPaths()">检查所有路径</button>
+        <div id="pathsResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>3. 检查新Controller</h3>
+        <button onclick="checkNewControllers()">检查新Controller</button>
+        <div id="newControllersResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h3>4. 启动日志分析</h3>
+        <div class="log">
+请查看后端控制台的启动日志，特别注意：
+
+1. 是否有错误信息（ERROR级别）
+2. 是否有Controller注册的日志
+3. 是否有"知行戒烟APP后端服务启动成功！"消息
+4. 启动过程中是否有异常
+
+请将启动日志复制到这里，我来分析问题所在。
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        
+        async function checkBasicConnection() {
+            const resultDiv = document.getElementById('basicResult');
+            resultDiv.innerHTML = '检查中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/test-simple`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 基本连接正常!</strong><br>
+                            状态码: ${response.status}<br>
+                            响应: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 基本连接失败!</strong><br>
+                            状态码: ${response.status}<br>
+                            状态文本: ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 网络错误!</strong><br>
+                        错误: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function checkAllPaths() {
+            const resultDiv = document.getElementById('pathsResult');
+            resultDiv.innerHTML = '检查中...';
+            resultDiv.className = 'result';
+            
+            const paths = [
+                { path: '/admin/test-simple', name: 'AdminController' },
+                { path: '/admin/audios/test-simple', name: 'AudioController' },
+                { path: '/simple-test/hello', name: 'SimpleTestController' },
+                { path: '/hello', name: 'HelloController' },
+                { path: '/minimal', name: 'MinimalController' },
+                { path: '/api/v1/agreements/types', name: 'AgreementController' },
+                { path: '/api/v1/test-agreements/hello', name: 'TestAgreementController' }
+            ];
+            
+            let results = '<h4>路径检查结果:</h4>';
+            
+            for (const item of paths) {
+                try {
+                    const url = `http://localhost:8081${item.path}`;
+                    const response = await fetch(url);
+                    const status = response.status;
+                    const statusText = response.statusText;
+                    
+                    if (response.ok) {
+                        results += `<div style="color: green;">✅ ${item.name} (${item.path}): ${status} ${statusText}</div>`;
+                    } else {
+                        results += `<div style="color: red;">❌ ${item.name} (${item.path}): ${status} ${statusText}</div>`;
+                    }
+                } catch (error) {
+                    results += `<div style="color: red;">❌ ${item.name} (${item.path}): 网络错误 - ${error.message}</div>`;
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <strong>路径检查完成</strong><br>
+                    ${results}
+                </div>
+            `;
+        }
+        
+        async function checkNewControllers() {
+            const resultDiv = document.getElementById('newControllersResult');
+            resultDiv.innerHTML = '检查中...';
+            resultDiv.className = 'result';
+            
+            const newControllers = [
+                { path: '/simple-test/hello', name: 'SimpleTestController' },
+                { path: '/hello', name: 'HelloController' },
+                { path: '/api/v1/agreements/types', name: 'AgreementController' },
+                { path: '/api/v1/test-agreements/hello', name: 'TestAgreementController' }
+            ];
+            
+            let results = '<h4>新Controller检查结果:</h4>';
+            
+            for (const item of newControllers) {
+                try {
+                    const url = `http://localhost:8081${item.path}`;
+                    const response = await fetch(url);
+                    const status = response.status;
+                    const statusText = response.statusText;
+                    
+                    if (response.ok) {
+                        results += `<div style="color: green;">✅ ${item.name}: ${status} ${statusText}</div>`;
+                    } else {
+                        results += `<div style="color: red;">❌ ${item.name}: ${status} ${statusText}</div>`;
+                    }
+                } catch (error) {
+                    results += `<div style="color: red;">❌ ${item.name}: 网络错误 - ${error.message}</div>`;
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <strong>新Controller检查完成</strong><br>
+                    ${results}
+                </div>
+            `;
+        }
+        
+        // 页面加载时自动检查
+        window.onload = function() {
+            checkBasicConnection();
+        };
+    </script>
+</body>
+</html> 

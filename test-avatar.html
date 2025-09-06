@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像URL构建测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .input { color: #0066cc; font-weight: bold; }
+        .output { color: #009900; font-weight: bold; }
+        .expected { color: #cc6600; font-weight: bold; }
+        .error { color: #cc0000; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>头像URL构建测试</h1>
+    <div id="test-results"></div>
+
+    <script>
+        // 头像工具类
+        class AvatarUtils {
+            constructor(baseUrl = 'http://localhost:8081/api/v1') {
+                this.baseUrl = baseUrl;
+            }
+
+            // 构建头像URL
+            buildAvatarUrl(avatar) {
+                console.log('构建头像URL，输入:', avatar);
+                
+                if (!avatar || avatar.trim() === '') {
+                    return '';
+                }
+                
+                // 如果已经是完整的URL，直接返回
+                if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                    return avatar;
+                }
+                
+                // 如果以/api/v1/avatar/开头，说明已经是完整的相对路径，需要拼接baseUrl
+                if (avatar.startsWith('/api/v1/avatar/')) {
+                    // 提取文件名部分
+                    const fileName = avatar.replace('/api/v1/avatar/', '');
+                    const fullUrl = `${this.baseUrl}/avatar/${fileName}`;
+                    console.log('构建的完整URL:', fullUrl);
+                    return fullUrl;
+                }
+                
+                // 如果以/api/v1开头但不是avatar路径，需要特殊处理
+                if (avatar.startsWith('/api/v1/')) {
+                    const cleanPath = avatar.replace('/api/v1', '');
+                    const fullUrl = `${this.baseUrl}${cleanPath}`;
+                    console.log('构建的完整URL:', fullUrl);
+                    return fullUrl;
+                }
+                
+                // 如果是纯文件名，直接拼接
+                const fullUrl = `${this.baseUrl}/avatar/${avatar}`;
+                console.log('构建的完整URL:', fullUrl);
+                return fullUrl;
+            }
+        }
+
+        // 创建实例
+        const avatarUtils = new AvatarUtils();
+
+        // 测试用例
+        const testCases = [
+            {
+                name: '空值',
+                input: '',
+                expected: ''
+            },
+            {
+                name: '完整URL',
+                input: 'https://example.com/avatar.jpg',
+                expected: 'https://example.com/avatar.jpg'
+            },
+            {
+                name: '相对路径（问题用例）',
+                input: '/api/v1/avatar/avatar_42_1754228678367_22db36a6.png',
+                expected: 'http://localhost:8081/api/v1/avatar/avatar_42_1754228678367_22db36a6.png'
+            },
+            {
+                name: '纯文件名',
+                input: 'avatar_42_1754228678367_22db36a6.png',
+                expected: 'http://localhost:8081/api/v1/avatar/avatar_42_1754228678367_22db36a6.png'
+            },
+            {
+                name: '其他API路径',
+                input: '/api/v1/user/profile',
+                expected: 'http://localhost:8081/api/v1/user/profile'
+            }
+        ];
+
+        // 运行测试
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            testCases.forEach((testCase, index) => {
+                const output = avatarUtils.buildAvatarUrl(testCase.input);
+                const isCorrect = output === testCase.expected;
+                
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-case';
+                testDiv.innerHTML = `
+                    <h3>测试${index + 1}: ${testCase.name}</h3>
+                    <p><span class="input">输入:</span> ${testCase.input}</p>
+                    <p><span class="output">输出:</span> ${output}</p>
+                    <p><span class="expected">期望:</span> ${testCase.expected}</p>
+                    <p><span class="${isCorrect ? 'output' : 'error'}">结果:</span> ${isCorrect ? '✅ 正确' : '❌ 错误'}</p>
+                `;
+                
+                resultsDiv.appendChild(testDiv);
+            });
+        }
+
+        // 页面加载完成后运行测试
+        window.onload = runTests;
+    </script>
+</body>
+</html> 

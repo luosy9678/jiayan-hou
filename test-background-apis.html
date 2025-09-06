@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背景图和简介API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .user-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .background-preview {
+            max-width: 300px;
+            max-height: 200px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>背景图和简介API测试</h1>
+
+    <!-- 用户信息显示 -->
+    <div class="container">
+        <h2>当前用户信息</h2>
+        <div id="userInfo" class="user-info">
+            点击"获取用户信息"查看
+        </div>
+        <button onclick="getUserProfile()">获取用户信息</button>
+    </div>
+
+    <!-- 背景图管理 -->
+    <div class="container">
+        <h2>背景图管理</h2>
+        
+        <div class="form-group">
+            <label>上传背景图文件:</label>
+            <input type="file" id="backgroundFile" accept="image/*">
+            <button onclick="uploadBackground()">上传背景图</button>
+        </div>
+
+        <div class="form-group">
+            <label>从URL下载背景图:</label>
+            <input type="url" id="backgroundUrl" placeholder="输入图片URL">
+            <button onclick="downloadBackground()">下载背景图</button>
+        </div>
+
+        <div class="form-group">
+            <label>设置背景图路径:</label>
+            <input type="text" id="backgroundPath" placeholder="输入背景图路径">
+            <button onclick="updateBackground()">更新背景图</button>
+        </div>
+
+        <button onclick="deleteBackground()" style="background-color: #dc3545;">删除背景图</button>
+    </div>
+
+    <!-- 用户简介管理 -->
+    <div class="container">
+        <h2>用户简介管理</h2>
+        
+        <div class="form-group">
+            <label>用户简介:</label>
+            <textarea id="userBio" rows="4" placeholder="输入用户简介"></textarea>
+            <button onclick="updateBio()">更新简介</button>
+        </div>
+    </div>
+
+    <!-- 批量更新 -->
+    <div class="container">
+        <h2>批量更新</h2>
+        
+        <div class="form-group">
+            <label>背景图路径:</label>
+            <input type="text" id="batchBackground" placeholder="输入背景图路径">
+        </div>
+        
+        <div class="form-group">
+            <label>用户简介:</label>
+            <textarea id="batchBio" rows="3" placeholder="输入用户简介"></textarea>
+        </div>
+        
+        <button onclick="batchUpdate()">批量更新</button>
+    </div>
+
+    <!-- 测试接口 -->
+    <div class="container">
+        <h2>测试接口（无需Token）</h2>
+        
+        <div class="form-group">
+            <label>用户ID:</label>
+            <input type="number" id="testUserId" placeholder="输入用户ID">
+        </div>
+        
+        <div class="form-group">
+            <label>背景图路径:</label>
+            <input type="text" id="testBackground" placeholder="输入背景图路径">
+        </div>
+        
+        <div class="form-group">
+            <label>用户简介:</label>
+            <textarea id="testBio" rows="3" placeholder="输入用户简介"></textarea>
+        </div>
+        
+        <button onclick="testUpdateBackground()">测试更新背景图</button>
+        <button onclick="testUpdateBio()">测试更新简介</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        let currentToken = '';
+
+        // 获取用户信息
+        async function getUserProfile() {
+            try {
+                const response = await fetch(`${API_BASE}/user/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                const result = await response.json();
+                displayResult('userInfo', result);
+                
+                if (result.success && result.data) {
+                    const user = result.data;
+                    document.getElementById('userInfo').innerHTML = `
+                        <strong>用户ID:</strong> ${user.id}<br>
+                        <strong>昵称:</strong> ${user.nickname}<br>
+                        <strong>背景图:</strong> ${user.backgroundImage}<br>
+                        <strong>用户简介:</strong> ${user.userBio}<br>
+                        ${user.backgroundImage && user.backgroundImage !== '/uploads/backgrounds/default-bg.jpg' ? 
+                            `<img src="${API_BASE}${user.backgroundImage}" class="background-preview" alt="背景图预览">` : 
+                            '<p>使用默认背景图</p>'}
+                    `;
+                }
+            } catch (error) {
+                displayResult('userInfo', { error: error.message });
+            }
+        }
+
+        // 上传背景图
+        async function uploadBackground() {
+            const fileInput = document.getElementById('backgroundFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/background/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: formData
+                });
+                const result = await response.json();
+                displayResult('uploadResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('uploadResult', { error: error.message });
+            }
+        }
+
+        // 下载背景图
+        async function downloadBackground() {
+            const url = document.getElementById('backgroundUrl').value;
+            if (!url) {
+                alert('请输入URL');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/background/download`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `backgroundUrl=${encodeURIComponent(url)}`
+                });
+                const result = await response.json();
+                displayResult('downloadResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('downloadResult', { error: error.message });
+            }
+        }
+
+        // 更新背景图
+        async function updateBackground() {
+            const backgroundPath = document.getElementById('backgroundPath').value;
+            if (!backgroundPath) {
+                alert('请输入背景图路径');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/background`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `backgroundImage=${encodeURIComponent(backgroundPath)}`
+                });
+                const result = await response.json();
+                displayResult('updateResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('updateResult', { error: error.message });
+            }
+        }
+
+        // 更新用户简介
+        async function updateBio() {
+            const userBio = document.getElementById('userBio').value;
+            if (!userBio) {
+                alert('请输入用户简介');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/bio`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `userBio=${encodeURIComponent(userBio)}`
+                });
+                const result = await response.json();
+                displayResult('bioResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('bioResult', { error: error.message });
+            }
+        }
+
+        // 批量更新
+        async function batchUpdate() {
+            const backgroundImage = document.getElementById('batchBackground').value;
+            const userBio = document.getElementById('batchBio').value;
+
+            if (!backgroundImage && !userBio) {
+                alert('请至少输入一个要更新的字段');
+                return;
+            }
+
+            const params = new URLSearchParams();
+            if (backgroundImage) params.append('backgroundImage', backgroundImage);
+            if (userBio) params.append('userBio', userBio);
+
+            try {
+                const response = await fetch(`${API_BASE}/user/profile-custom`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                });
+                const result = await response.json();
+                displayResult('batchResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('batchResult', { error: error.message });
+            }
+        }
+
+        // 删除背景图
+        async function deleteBackground() {
+            if (!confirm('确定要删除背景图吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/background/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+                const result = await response.json();
+                displayResult('deleteResult', result);
+                if (result.success) {
+                    getUserProfile();
+                }
+            } catch (error) {
+                displayResult('deleteResult', { error: error.message });
+            }
+        }
+
+        // 测试更新背景图
+        async function testUpdateBackground() {
+            const userId = document.getElementById('testUserId').value;
+            const backgroundImage = document.getElementById('testBackground').value;
+            
+            if (!userId || !backgroundImage) {
+                alert('请输入用户ID和背景图路径');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/update-background?userId=${userId}&backgroundImage=${encodeURIComponent(backgroundImage)}`);
+                const result = await response.json();
+                displayResult('testResult', result);
+            } catch (error) {
+                displayResult('testResult', { error: error.message });
+            }
+        }
+
+        // 测试更新简介
+        async function testUpdateBio() {
+            const userId = document.getElementById('testUserId').value;
+            const userBio = document.getElementById('testBio').value;
+            
+            if (!userId || !userBio) {
+                alert('请输入用户ID和用户简介');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/user/update-bio?userId=${userId}&userBio=${encodeURIComponent(userBio)}`);
+                const result = await response.json();
+                displayResult('testResult', result);
+            } catch (error) {
+                displayResult('testResult', { error: error.message });
+            }
+        }
+
+        // 显示结果
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.className = 'result ' + (result.success ? 'success' : 'error');
+                element.textContent = JSON.stringify(result, null, 2);
+            } else {
+                console.log(result);
+            }
+        }
+
+        // 设置Token（用于测试）
+        function setToken() {
+            const token = prompt('请输入Token:');
+            if (token) {
+                currentToken = token;
+                alert('Token已设置');
+            }
+        }
+
+        // 页面加载时提示设置Token
+        window.onload = function() {
+            if (!currentToken) {
+                setToken();
+            }
+        };
+    </script>
+</body>
+</html> 

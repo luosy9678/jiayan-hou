@@ -1,0 +1,82 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-btn { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 10px;
+        }
+        .result { 
+            margin: 20px 0; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API连接测试</h1>
+    <button class="test-btn" onclick="testAPI()">测试API连接</button>
+    <button class="test-btn" onclick="testCategories()">测试分类接口</button>
+    <button class="test-btn" onclick="testUsers()">测试用户接口</button>
+    
+    <div id="result" class="result" style="display:none;">
+        <h3>测试结果：</h3>
+        <pre id="resultContent"></pre>
+    </div>
+
+    <script>
+        function showResult(data) {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resultContent').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testAPI() {
+            try {
+                const response = await fetch('/api/v1/knowledge/categories');
+                const data = await response.json();
+                showResult({ status: 'success', data: data });
+            } catch (error) {
+                showResult({ status: 'error', message: error.message });
+            }
+        }
+
+        async function testCategories() {
+            try {
+                const response = await fetch('/api/v1/knowledge/categories');
+                const data = await response.json();
+                showResult({ 
+                    status: 'success', 
+                    message: '分类接口正常',
+                    count: data.content ? data.content.length : 0
+                });
+            } catch (error) {
+                showResult({ status: 'error', message: error.message });
+            }
+        }
+
+        async function testUsers() {
+            try {
+                const response = await fetch('/api/v1/admin/users');
+                const data = await response.json();
+                showResult({ 
+                    status: 'success', 
+                    message: '用户接口正常',
+                    count: data.data && data.data.content ? data.data.content.length : 0
+                });
+            } catch (error) {
+                showResult({ status: 'error', message: error.message });
+            }
+        }
+    </script>
+</body>
+</html>

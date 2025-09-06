@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时区修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .time-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .time-info h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 时区修复测试</h1>
+        
+        <div class="time-info">
+            <h3>📅 时间字段说明</h3>
+            <p><strong>timestamp字段</strong>：前端传递北京时间，后端转换为UTC时间存储，返回时转换为北京时间</p>
+            <p><strong>created_at字段</strong>：存储北京时间，用于统计和显示</p>
+            <p><strong>updated_at字段</strong>：存储北京时间，用于记录更新时间</p>
+        </div>
+
+        <h2>测试功能</h2>
+        
+        <div class="form-group">
+            <label for="token">JWT Token:</label>
+            <input type="text" id="token" placeholder="请输入JWT Token">
+        </div>
+
+        <div class="form-group">
+            <label for="timestamp">训练时间（北京时间）:</label>
+            <input type="datetime-local" id="timestamp">
+        </div>
+
+        <div class="form-group">
+            <label for="duration">训练时长（秒）:</label>
+            <input type="number" id="duration" value="300" min="1">
+        </div>
+
+        <div class="form-group">
+            <label for="audioType">音频类型:</label>
+            <select id="audioType">
+                <option value="">无</option>
+                <option value="female1">女声1</option>
+                <option value="female2">女声2</option>
+                <option value="male1">男声1</option>
+                <option value="male2">男声2</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="note">备注:</label>
+            <input type="text" id="note" placeholder="训练备注">
+        </div>
+
+        <button class="btn btn-success" onclick="createTrainingRecord()">创建训练记录</button>
+        <button class="btn" onclick="getLastTrainingRecord()">获取最后一次训练记录</button>
+        <button class="btn" onclick="getTodayTrainingCount()">获取今日训练次数</button>
+        <button class="btn btn-warning" onclick="clearResults()">清空结果</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // 设置默认时间为当前北京时间
+        function setDefaultTime() {
+            const now = new Date();
+            const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // UTC+8
+            const localTime = new Date(beijingTime.getTime() - (beijingTime.getTimezoneOffset() * 60 * 1000));
+            document.getElementById('timestamp').value = localTime.toISOString().slice(0, 16);
+        }
+
+        // 页面加载时设置默认时间
+        window.onload = setDefaultTime;
+
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = `${new Date().toLocaleString()} - ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function createTrainingRecord() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+
+            const timestamp = document.getElementById('timestamp').value;
+            const duration = document.getElementById('duration').value;
+            const audioType = document.getElementById('audioType').value;
+            const note = document.getElementById('note').value;
+
+            if (!timestamp || !duration) {
+                showResult('请填写必要信息', 'error');
+                return;
+            }
+
+            // 将本地时间转换为北京时间ISO字符串
+            const localDateTime = new Date(timestamp);
+            const beijingTime = new Date(localDateTime.getTime() + (8 * 60 * 60 * 1000));
+            const beijingISOString = beijingTime.toISOString().replace('Z', '');
+
+            const requestData = {
+                timestamp: beijingISOString,
+                duration: parseInt(duration),
+                audioType: audioType || null,
+                completed: true,
+                note: note || null
+            };
+
+            showResult('正在创建训练记录...', 'info');
+            showResult(`请求数据: ${JSON.stringify(requestData, null, 2)}`, 'info');
+
+            try {
+                const response = await fetch('/records/training', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('✅ 训练记录创建成功', 'success');
+                    showResult(`响应数据: ${JSON.stringify(result, null, 2)}`, 'success');
+                    
+                    // 分析时间字段
+                    if (result.data) {
+                        showResult('📊 时间字段分析:', 'info');
+                        showResult(`前端发送时间: ${beijingISOString}`, 'info');
+                        showResult(`返回timestamp: ${result.data.timestamp}`, 'info');
+                        showResult(`返回createdAt: ${result.data.createdAt}`, 'info');
+                        
+                        // 检查时间是否一致
+                        const frontendTime = new Date(beijingISOString);
+                        const responseTimestamp = new Date(result.data.timestamp);
+                        const responseCreatedAt = new Date(result.data.createdAt);
+                        
+                        const timeDiff1 = Math.abs(frontendTime.getTime() - responseTimestamp.getTime());
+                        const timeDiff2 = Math.abs(frontendTime.getTime() - responseCreatedAt.getTime());
+                        
+                        if (timeDiff1 < 1000 && timeDiff2 < 1000) {
+                            showResult('✅ 时间字段一致，时区处理正确！', 'success');
+                        } else {
+                            showResult('❌ 时间字段不一致，时区处理有问题', 'error');
+                        }
+                    }
+                } else {
+                    showResult(`❌ 创建失败: ${result.message}`, 'error');
+                    showResult(`错误详情: ${JSON.stringify(result, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function getLastTrainingRecord() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+
+            showResult('正在获取最后一次训练记录...', 'info');
+
+            try {
+                const response = await fetch('/records/training/last', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    if (result.data) {
+                        showResult('✅ 获取最后一次训练记录成功', 'success');
+                        showResult(`记录详情: ${JSON.stringify(result.data, null, 2)}`, 'success');
+                    } else {
+                        showResult('ℹ️ 暂无训练记录', 'info');
+                    }
+                } else {
+                    showResult(`❌ 获取失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+
+        async function getTodayTrainingCount() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                showResult('请输入JWT Token', 'error');
+                return;
+            }
+
+            showResult('正在获取今日训练次数...', 'info');
+
+            try {
+                const response = await fetch('/records/training/today-count', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ 今日训练次数: ${result.data}`, 'success');
+                } else {
+                    showResult(`❌ 获取失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误处理器测试</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@4/lib/index.css"/>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-section h2 {
+            margin: 0 0 20px 0;
+            color: #323233;
+            font-size: 20px;
+            border-bottom: 2px solid #f2f3f5;
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #e8f5e8;
+            border-color: #07c160;
+        }
+        
+        .result.error {
+            background: #fde8e8;
+            border-color: #ee0a24;
+        }
+        
+        .status-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f2f3f5;
+            border-radius: 8px;
+        }
+        
+        .status-item {
+            text-align: center;
+        }
+        
+        .status-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #323233;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #969799;
+            margin-top: 4px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #969799;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>错误处理器测试</h1>
+                <p>测试Spring Boot错误处理器的各种错误情况</p>
+            </div>
+
+            <!-- 状态信息 -->
+            <div class="test-section">
+                <h2>服务状态</h2>
+                <div class="status-info">
+                    <div class="status-item">
+                        <div class="status-value" id="serverStatus">检查中...</div>
+                        <div class="status-label">服务器状态</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="errorCount">0</div>
+                        <div class="status-label">错误次数</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="successCount">0</div>
+                        <div class="status-label">成功次数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 错误测试 -->
+            <div class="test-section">
+                <h2>错误处理器测试</h2>
+                <div class="button-group">
+                    <van-button type="primary" @click="test404Error">测试404错误</van-button>
+                    <van-button type="primary" @click="test500Error">测试500错误</van-button>
+                    <van-button type="primary" @click="testCustomError">测试自定义错误</van-button>
+                    <van-button type="primary" @click="testInvalidEndpoint">测试无效端点</van-button>
+                    <van-button type="primary" @click="testMethodNotAllowed">测试方法不允许</van-button>
+                    <van-button type="primary" @click="testLargeRequest">测试大请求</van-button>
+                </div>
+                
+                <div v-if="testResult" :class="`result ${testResult.type}`">
+                    <strong>{{ testResult.title }}</strong><br>
+                    <pre>{{ testResult.data }}</pre>
+                </div>
+            </div>
+
+            <!-- 日志查看 -->
+            <div class="test-section">
+                <h2>错误日志</h2>
+                <van-button type="primary" @click="clearLogs" style="margin-bottom: 16px;">
+                    清空日志
+                </van-button>
+                
+                <div v-for="log in errorLogs" :key="log.id" class="result error">
+                    <strong>{{ log.timestamp }} - {{ log.type }}</strong><br>
+                    <pre>{{ log.message }}</pre>
+                </div>
+                
+                <div v-if="errorLogs.length === 0" class="result">
+                    暂无错误日志
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div v-if="loading" class="loading">
+                <van-loading size="24px">处理中...</van-loading>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vant@4/lib/vant.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 响应式数据
+                const loading = ref(false);
+                const testResult = ref(null);
+                const errorLogs = ref([]);
+                const serverStatus = ref('检查中...');
+                const errorCount = ref(0);
+                const successCount = ref(0);
+                
+                // 方法
+                const addLog = (type, message) => {
+                    const log = {
+                        id: Date.now(),
+                        timestamp: new Date().toLocaleString(),
+                        type,
+                        message
+                    };
+                    errorLogs.value.unshift(log);
+                    
+                    if (type === 'ERROR') {
+                        errorCount.value++;
+                    } else if (type === 'SUCCESS') {
+                        successCount.value++;
+                    }
+                };
+                
+                const test404Error = async () => {
+                    loading.value = true;
+                    try {
+                        const response = await axios.get('http://localhost:8081/api/v1/nonexistent');
+                        testResult.value = {
+                            type: 'success',
+                            title: '404错误测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '404错误测试成功');
+                    } catch (error) {
+                        if (error.response && error.response.status === 404) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '404错误测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '404错误被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '404错误测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '404错误测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const test500Error = async () => {
+                    loading.value = true;
+                    try {
+                        // 尝试调用一个可能不存在的服务
+                        const response = await axios.post('http://localhost:8081/api/v1/diary/create', {
+                            content: 'test',
+                            tags: ['test']
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer invalid-token'
+                            }
+                        });
+                        testResult.value = {
+                            type: 'success',
+                            title: '500错误测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '500错误测试成功');
+                    } catch (error) {
+                        if (error.response && error.response.status >= 500) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '500错误测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '500错误被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '500错误测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '500错误测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const testCustomError = async () => {
+                    loading.value = true;
+                    try {
+                        // 测试业务异常
+                        const response = await axios.get('http://localhost:8081/api/v1/test/business-error');
+                        testResult.value = {
+                            type: 'success',
+                            title: '业务异常测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '业务异常测试成功');
+                    } catch (error) {
+                        if (error.response) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '业务异常测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '业务异常被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '业务异常测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '业务异常测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const testInvalidEndpoint = async () => {
+                    loading.value = true;
+                    try {
+                        const response = await axios.get('http://localhost:8081/invalid-endpoint');
+                        testResult.value = {
+                            type: 'success',
+                            title: '无效端点测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '无效端点测试成功');
+                    } catch (error) {
+                        if (error.response) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '无效端点测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '无效端点被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '无效端点测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '无效端点测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const testMethodNotAllowed = async () => {
+                    loading.value = true;
+                    try {
+                        // 尝试用GET方法访问POST接口
+                        const response = await axios.get('http://localhost:8081/api/v1/diary/create');
+                        testResult.value = {
+                            type: 'success',
+                            title: '方法不允许测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '方法不允许测试成功');
+                    } catch (error) {
+                        if (error.response && error.response.status === 405) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '方法不允许测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '405错误被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '方法不允许测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '方法不允许测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const testLargeRequest = async () => {
+                    loading.value = true;
+                    try {
+                        // 创建一个超大的请求体
+                        const largeData = {
+                            content: 'a'.repeat(10000), // 超过1000字符限制
+                            tags: Array(10).fill('tag'), // 超过5个标签限制
+                            images: Array(10).fill({}) // 超过6张图片限制
+                        };
+                        
+                        const response = await axios.post('http://localhost:8081/api/v1/diary/create', largeData);
+                        testResult.value = {
+                            type: 'success',
+                            title: '大请求测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                        addLog('SUCCESS', '大请求测试成功');
+                    } catch (error) {
+                        if (error.response) {
+                            testResult.value = {
+                                type: 'success',
+                                title: '大请求测试成功',
+                                data: JSON.stringify(error.response.data, null, 2)
+                            };
+                            addLog('SUCCESS', '大请求被正确捕获');
+                        } else {
+                            testResult.value = {
+                                type: 'error',
+                                title: '大请求测试失败',
+                                data: error.message
+                            };
+                            addLog('ERROR', '大请求测试失败: ' + error.message);
+                        }
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                const clearLogs = () => {
+                    errorLogs.value = [];
+                    errorCount.value = 0;
+                    successCount.value = 0;
+                };
+                
+                const checkServerStatus = async () => {
+                    try {
+                        const response = await axios.get('http://localhost:8081/api/v1/diary/stats');
+                        if (response.status === 200) {
+                            serverStatus.value = '正常';
+                            addLog('SUCCESS', '服务器连接正常');
+                        }
+                    } catch (error) {
+                        if (error.code === 'ERR_NETWORK') {
+                            serverStatus.value = '未连接';
+                            addLog('ERROR', '无法连接到服务器，请确保后端服务正在运行');
+                        } else if (error.response) {
+                            serverStatus.value = '响应异常';
+                            addLog('ERROR', '服务器响应异常: ' + error.response.status);
+                        } else {
+                            serverStatus.value = '未知状态';
+                            addLog('ERROR', '服务器状态未知: ' + error.message);
+                        }
+                    }
+                };
+                
+                // 生命周期
+                onMounted(() => {
+                    checkServerStatus();
+                });
+                
+                return {
+                    loading,
+                    testResult,
+                    errorLogs,
+                    serverStatus,
+                    errorCount,
+                    successCount,
+                    test404Error,
+                    test500Error,
+                    testCustomError,
+                    testInvalidEndpoint,
+                    testMethodNotAllowed,
+                    testLargeRequest,
+                    clearLogs
+                };
+            }
+        }).use(vant).mount('#app');
+    </script>
+</body>
+</html> 

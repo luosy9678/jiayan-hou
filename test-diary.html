@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戒烟日记功能测试</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vant@4/lib/index.css"/>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-section h2 {
+            margin: 0 0 20px 0;
+            color: #323233;
+            font-size: 20px;
+            border-bottom: 2px solid #f2f3f5;
+            padding-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .diary-form {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #323233;
+        }
+        
+        .diary-preview {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        
+        .diary-item {
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .diary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f2f3f5;
+        }
+        
+        .diary-date {
+            font-weight: 600;
+            color: #323233;
+        }
+        
+        .diary-status {
+            font-size: 12px;
+        }
+        
+        .diary-content {
+            margin-bottom: 12px;
+            line-height: 1.6;
+            color: #646566;
+        }
+        
+        .diary-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        
+        .diary-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #969799;
+        }
+        
+        .mood-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .image-preview {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .image-preview img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #e8e8e8;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-draft { background: #f2f3f5; color: #646566; }
+        .status-private { background: #e8f4fd; color: #1989fa; }
+        .status-public { background: #e8f5e8; color: #07c160; }
+        .status-deleted { background: #fde8e8; color: #ee0a24; }
+        
+        .forwarded-badge {
+            background: #e8f5e8;
+            color: #07c160;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #969799;
+        }
+        
+        .error {
+            background: #fde8e8;
+            color: #ee0a24;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        
+        .success {
+            background: #e8f5e8;
+            color: #07c160;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .diary-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>戒烟日记功能测试</h1>
+                <p>测试日记的创建、编辑、列表和论坛转发功能</p>
+            </div>
+
+            <!-- API测试 -->
+            <div class="test-section">
+                <h2>API接口测试</h2>
+                <div class="button-group">
+                    <van-button type="primary" @click="testCreateDiary">测试创建日记</van-button>
+                    <van-button type="primary" @click="testGetDiaryList">测试获取日记列表</van-button>
+                    <van-button type="primary" @click="testGetDiaryDetail">测试获取日记详情</van-button>
+                    <van-button type="primary" @click="testUpdateDiary">测试更新日记</van-button>
+                    <van-button type="primary" @click="testDeleteDiary">测试删除日记</van-button>
+                    <van-button type="primary" @click="testForwardDiary">测试转发到论坛</van-button>
+                </div>
+                
+                <div v-if="apiResult" :class="apiResult.type">
+                    <strong>{{ apiResult.title }}</strong><br>
+                    <pre>{{ apiResult.data }}</pre>
+                </div>
+            </div>
+
+            <!-- 日记创建表单 -->
+            <div class="test-section">
+                <h2>日记创建表单</h2>
+                <div class="diary-form">
+                    <div class="form-group">
+                        <label>心情评分</label>
+                        <van-rate v-model="diaryForm.moodScore" :count="5" size="20" />
+                        <span style="margin-left: 12px; color: #646566;">
+                            {{ getMoodText(diaryForm.moodScore) }}
+                        </span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>日记内容</label>
+                        <van-field
+                            v-model="diaryForm.content"
+                            type="textarea"
+                            placeholder="记录今天的戒烟感受..."
+                            :rows="4"
+                            maxlength="1000"
+                            show-word-limit
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>标签</label>
+                        <van-field
+                            v-model="diaryForm.tagInput"
+                            placeholder="输入标签，用逗号分隔"
+                            @keyup.enter="addTag"
+                        />
+                        <div class="diary-tags" style="margin-top: 8px;">
+                            <van-tag
+                                v-for="tag in diaryForm.tags"
+                                :key="tag"
+                                type="primary"
+                                closeable
+                                @close="removeTag(tag)"
+                            >
+                                {{ tag }}
+                            </van-tag>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>图片上传</label>
+                        <van-uploader
+                            v-model="diaryForm.images"
+                            :max-count="6"
+                            accept="image/*"
+                            :after-read="afterRead"
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>日记状态</label>
+                        <van-radio-group v-model="diaryForm.status" direction="horizontal">
+                            <van-radio name="draft">草稿</van-radio>
+                            <van-radio name="private">私人日记</van-radio>
+                            <van-radio name="public">发布日记</van-radio>
+                        </van-radio-group>
+                    </div>
+                    
+                    <van-button type="primary" @click="createDiary" :loading="creating">
+                        创建日记
+                    </van-button>
+                </div>
+            </div>
+
+            <!-- 日记预览 -->
+            <div class="test-section" v-if="createdDiary">
+                <h2>创建的日记预览</h2>
+                <div class="diary-preview">
+                    <div class="diary-header">
+                        <div class="diary-date">
+                            {{ formatDate(createdDiary.recordDate) }} {{ formatTime(createdDiary.recordTime) }}
+                        </div>
+                        <div class="diary-status">
+                            <span :class="`status-badge status-${createdDiary.status}`">
+                                {{ getStatusText(createdDiary.status) }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="diary-content">
+                        {{ createdDiary.content }}
+                    </div>
+                    
+                    <div class="diary-tags" v-if="createdDiary.tags.length > 0">
+                        <van-tag
+                            v-for="tag in createdDiary.tags"
+                            :key="tag"
+                            type="primary"
+                            size="small"
+                            plain
+                        >
+                            {{ tag }}
+                        </van-tag>
+                    </div>
+                    
+                    <div class="image-preview" v-if="createdDiary.images.length > 0">
+                        <img
+                            v-for="image in createdDiary.images"
+                            :key="image.id"
+                            :src="image.fileUrl"
+                            :alt="image.fileName"
+                        />
+                    </div>
+                    
+                    <div class="diary-meta">
+                        <div class="mood-display">
+                            <van-icon name="smile-o" />
+                            心情: {{ createdDiary.moodScore }}/5
+                        </div>
+                        <span>字数: {{ createdDiary.wordCount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 日记列表 -->
+            <div class="test-section" v-if="diaryList.length > 0">
+                <h2>日记列表 ({{ diaryList.length }}篇)</h2>
+                <div class="diary-item" v-for="diary in diaryList" :key="diary.id">
+                    <div class="diary-header">
+                        <div class="diary-date">
+                            {{ formatDate(diary.recordDate) }} {{ formatTime(diary.recordTime) }}
+                        </div>
+                        <div class="diary-status">
+                            <span :class="`status-badge status-${diary.status}`">
+                                {{ getStatusText(diary.status) }}
+                            </span>
+                            <span v-if="diary.isForwarded" class="forwarded-badge">
+                                已转发
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="diary-content">
+                        {{ diary.content }}
+                    </div>
+                    
+                    <div class="diary-tags" v-if="diary.tags.length > 0">
+                        <van-tag
+                            v-for="tag in diary.tags"
+                            :key="tag"
+                            type="primary"
+                            size="small"
+                            plain
+                        >
+                            {{ tag }}
+                        </van-tag>
+                    </div>
+                    
+                    <div class="diary-meta">
+                        <div class="mood-display">
+                            <van-icon name="smile-o" />
+                            心情: {{ diary.moodScore }}/5
+                        </div>
+                        <span>字数: {{ diary.wordCount }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div v-if="loading" class="loading">
+                <van-loading size="24px">加载中...</van-loading>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vant@4/lib/vant.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // 响应式数据
+                const loading = ref(false);
+                const creating = ref(false);
+                const apiResult = ref(null);
+                const createdDiary = ref(null);
+                const diaryList = ref([]);
+                
+                // 日记表单
+                const diaryForm = reactive({
+                    moodScore: 3,
+                    content: '',
+                    tagInput: '',
+                    tags: [],
+                    images: [],
+                    status: 'draft'
+                });
+                
+                // 模拟数据
+                const mockDiaries = [
+                    {
+                        id: 'diary_001',
+                        content: '今天是戒烟第一天，感觉有点焦虑，但我会坚持下去的！',
+                        moodScore: 3,
+                        tags: ['戒烟', '第一天', '坚持'],
+                        images: [],
+                        status: 'private',
+                        recordDate: '2024-01-15',
+                        recordTime: '2024-01-15T09:30:00.000Z',
+                        wordCount: 45,
+                        isForwarded: false
+                    },
+                    {
+                        id: 'diary_002',
+                        content: '下午的时候特别想吸烟，但我通过深呼吸和喝水克服了，感觉很有成就感！',
+                        moodScore: 4,
+                        tags: ['成功时刻', '克服困难'],
+                        images: [],
+                        status: 'public',
+                        recordDate: '2024-01-15',
+                        recordTime: '2024-01-15T18:00:00.000Z',
+                        wordCount: 52,
+                        isForwarded: true,
+                        forumSection: 'quit_experience'
+                    }
+                ];
+                
+                // 方法
+                const getMoodText = (score) => {
+                    const texts = ['', '很差', '不好', '一般', '不错', '很好'];
+                    return texts[score] || '一般';
+                };
+                
+                const getStatusText = (status) => {
+                    const texts = {
+                        draft: '草稿',
+                        private: '私人',
+                        public: '发布',
+                        deleted: '已删除'
+                    };
+                    return texts[status] || '未知';
+                };
+                
+                const formatDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    return `${date.getMonth() + 1}月${date.getDate()}日`;
+                };
+                
+                const formatTime = (timeStr) => {
+                    const time = new Date(timeStr);
+                    return `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                };
+                
+                const addTag = () => {
+                    const tags = diaryForm.tagInput.split(',').map(tag => tag.trim()).filter(tag => tag);
+                    diaryForm.tags.push(...tags);
+                    diaryForm.tagInput = '';
+                };
+                
+                const removeTag = (tag) => {
+                    const index = diaryForm.tags.indexOf(tag);
+                    if (index > -1) {
+                        diaryForm.tags.splice(index, 1);
+                    }
+                };
+                
+                const afterRead = (file) => {
+                    // 模拟图片上传
+                    const imageData = {
+                        id: `img_${Date.now()}`,
+                        fileName: file.file.name,
+                        fileUrl: URL.createObjectURL(file.file),
+                        fileSize: file.file.size
+                    };
+                    diaryForm.images.push(imageData);
+                };
+                
+                const createDiary = async () => {
+                    if (!diaryForm.content.trim()) {
+                        vant.showToast('请输入日记内容');
+                        return;
+                    }
+                    
+                    creating.value = true;
+                    
+                    try {
+                        // 模拟API调用
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        const newDiary = {
+                            id: `diary_${Date.now()}`,
+                            content: diaryForm.content,
+                            moodScore: diaryForm.moodScore,
+                            tags: [...diaryForm.tags],
+                            images: [...diaryForm.images],
+                            status: diaryForm.status,
+                            recordDate: new Date().toISOString().split('T')[0],
+                            recordTime: new Date().toISOString(),
+                            wordCount: diaryForm.content.length,
+                            isForwarded: false
+                        };
+                        
+                        createdDiary.value = newDiary;
+                        diaryList.value.unshift(newDiary);
+                        
+                        // 重置表单
+                        diaryForm.content = '';
+                        diaryForm.tags = [];
+                        diaryForm.images = [];
+                        
+                        vant.showSuccessToast('日记创建成功');
+                        
+                    } catch (error) {
+                        console.error('创建日记失败:', error);
+                        vant.showToast('创建失败，请重试');
+                    } finally {
+                        creating.value = false;
+                    }
+                };
+                
+                // API测试方法
+                const testCreateDiary = async () => {
+                    try {
+                        const response = await axios.post('http://localhost:8081/api/v1/diary/create', {
+                            content: '测试日记内容',
+                            tags: ['测试', 'API'],
+                            images: []
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer test-token',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '创建日记API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '创建日记API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                const testGetDiaryList = async () => {
+                    try {
+                        const response = await axios.get('http://localhost:8081/api/v1/diary/list', {
+                            headers: {
+                                'Authorization': 'Bearer test-token'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '获取日记列表API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '获取日记列表API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                const testGetDiaryDetail = async () => {
+                    try {
+                        const response = await axios.get('http://localhost:8081/api/v1/diary/diary_001', {
+                            headers: {
+                                'Authorization': 'Bearer test-token'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '获取日记详情API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '获取日记详情API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                const testUpdateDiary = async () => {
+                    try {
+                        const response = await axios.put('http://localhost:8081/api/v1/diary/diary_001', {
+                            content: '更新后的日记内容',
+                            tags: ['更新', '测试']
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer test-token',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '更新日记API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '更新日记API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                const testDeleteDiary = async () => {
+                    try {
+                        const response = await axios.delete('http://localhost:8081/api/v1/diary/diary_001', {
+                            headers: {
+                                'Authorization': 'Bearer test-token'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '删除日记API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '删除日记API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                const testForwardDiary = async () => {
+                    try {
+                        const response = await axios.post('http://localhost:8081/api/v1/diary/diary_001/forward', {
+                            section: 'quit_experience'
+                        }, {
+                            headers: {
+                                'Authorization': 'Bearer test-token',
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        apiResult.value = {
+                            type: 'success',
+                            title: '转发日记API测试成功',
+                            data: JSON.stringify(response.data, null, 2)
+                        };
+                    } catch (error) {
+                        apiResult.value = {
+                            type: 'error',
+                            title: '转发日记API测试失败',
+                            data: error.message
+                        };
+                    }
+                };
+                
+                // 生命周期
+                onMounted(() => {
+                    // 初始化模拟数据
+                    diaryList.value = [...mockDiaries];
+                });
+                
+                return {
+                    loading,
+                    creating,
+                    apiResult,
+                    createdDiary,
+                    diaryList,
+                    diaryForm,
+                    getMoodText,
+                    getStatusText,
+                    formatDate,
+                    formatTime,
+                    addTag,
+                    removeTag,
+                    afterRead,
+                    createDiary,
+                    testCreateDiary,
+                    testGetDiaryList,
+                    testGetDiaryDetail,
+                    testUpdateDiary,
+                    testDeleteDiary,
+                    testForwardDiary
+                };
+            }
+        }).use(vant).mount('#app');
+    </script>
+</body>
+</html> 

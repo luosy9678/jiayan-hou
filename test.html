@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>戒烟APP接口测试</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>戒烟APP后端接口测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 发送验证码测试</h3>
+            <input type="text" id="phone" placeholder="手机号" value="13900000001">
+            <input type="text" id="type" placeholder="类型" value="register">
+            <button onclick="sendCode()">发送验证码</button>
+            <div id="codeResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 用户注册测试</h3>
+            <input type="text" id="regPhone" placeholder="手机号" value="13900000001"><br>
+            <input type="email" id="regEmail" placeholder="邮箱" value="test@example.com"><br>
+            <input type="password" id="regPassword" placeholder="密码" value="123456"><br>
+            <input type="text" id="regNickname" placeholder="昵称" value="测试用户"><br>
+            <input type="text" id="regCode" placeholder="验证码" value=""><br>
+            <button onclick="register()">注册</button>
+            <div id="regResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 用户登录测试</h3>
+            <input type="text" id="loginAccount" placeholder="手机号或邮箱" value="13900000001"><br>
+            <input type="password" id="loginPassword" placeholder="密码" value="123456"><br>
+            <button onclick="login()">登录</button>
+            <div id="loginResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+        
+        function showResult(elementId, data) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+        
+        async function sendCode() {
+            const phone = document.getElementById('phone').value;
+            const type = document.getElementById('type').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/send-code`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `phone=${phone}&type=${type}`
+                });
+                
+                const data = await response.json();
+                showResult('codeResult', data);
+                
+                if (data.code === 200) {
+                    alert('验证码发送成功！请查看控制台日志获取验证码');
+                }
+            } catch (error) {
+                showResult('codeResult', { error: error.message });
+            }
+        }
+        
+        async function register() {
+            const phone = document.getElementById('regPhone').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const nickname = document.getElementById('regNickname').value;
+            const verificationCode = document.getElementById('regCode').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        phone,
+                        email,
+                        password,
+                        nickname,
+                        verificationCode
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('regResult', data);
+                
+                if (data.code === 200) {
+                    alert('注册成功！');
+                }
+            } catch (error) {
+                showResult('regResult', { error: error.message });
+            }
+        }
+        
+        async function login() {
+            const account = document.getElementById('loginAccount').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        account,
+                        password
+                    })
+                });
+                
+                const data = await response.json();
+                showResult('loginResult', data);
+                
+                if (data.code === 200) {
+                    alert('登录成功！Token: ' + data.data.token.substring(0, 20) + '...');
+                }
+            } catch (error) {
+                showResult('loginResult', { error: error.message });
+            }
+        }
+    </script>
+</body>
+</html> 

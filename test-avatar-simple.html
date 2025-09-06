@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>头像功能简单测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 15px; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>头像功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 第三方登录测试（自动下载头像）</h3>
+        <button onclick="testThirdPartyLogin()">测试第三方登录</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 获取用户信息（查看头像URL）</h3>
+        <input type="text" id="userId" placeholder="用户ID" value="1">
+        <button onclick="getUserProfile()">获取用户信息</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 查看头像文件</h3>
+        <input type="text" id="avatarFileName" placeholder="头像文件名">
+        <button onclick="viewAvatar()">查看头像</button>
+        <div id="result3" class="result"></div>
+        <img id="avatarImage" style="max-width: 200px; margin-top: 10px; display: none;">
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8081/api/v1';
+
+        async function testThirdPartyLogin() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/third-party/bind`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        platform: 'wechat',
+                        openid: 'test_openid_' + Date.now(),
+                        nickname: '测试用户',
+                        avatar: 'https://thirdwx.qlogo.cn/mmopen/mock_avatar.jpg'
+                    })
+                });
+
+                const result = await response.json();
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+
+        async function getUserProfile() {
+            const userId = document.getElementById('userId').value;
+            const resultDiv = document.getElementById('result2');
+            resultDiv.textContent = '获取中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/user/profile-simple?userId=${userId}`);
+                const result = await response.json();
+                resultDiv.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+
+        async function viewAvatar() {
+            const fileName = document.getElementById('avatarFileName').value;
+            const resultDiv = document.getElementById('result3');
+            const avatarImage = document.getElementById('avatarImage');
+            
+            if (!fileName) {
+                resultDiv.textContent = '请输入文件名';
+                return;
+            }
+            
+            try {
+                const avatarUrl = `${API_BASE}/avatar/${fileName}`;
+                resultDiv.textContent = `头像URL: ${avatarUrl}`;
+                avatarImage.src = avatarUrl;
+                avatarImage.style.display = 'block';
+            } catch (error) {
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 

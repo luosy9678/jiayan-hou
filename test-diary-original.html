@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试原始日记接口</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .note { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>测试原始日记接口</h1>
+    
+    <div class="note">
+        <strong>注意：</strong> 这个页面测试原始的日记接口 `/api/v1/diary/*`，而不是测试接口。
+        <br>如果这些接口工作，说明日记控制器已经正确加载。
+    </div>
+    
+    <button onclick="testAll()">测试所有日记接口</button>
+    <button onclick="clearResults()">清除结果</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8081/api/v1/diary';
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function testEndpoint(name, url, method = 'GET', body = null) {
+            try {
+                const options = { method };
+                if (body) {
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ ${name}: ${result}`, 'success');
+                } else {
+                    addResult(`❌ ${name}: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ ${name}: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAll() {
+            addResult('开始测试所有日记接口...', 'info');
+            
+            // 测试基础接口
+            await testEndpoint('日记测试', `${BASE_URL}/test`);
+            
+            // 测试日记接口
+            await testEndpoint('日记创建', `${BASE_URL}/create`, 'POST', '测试日记内容');
+            await testEndpoint('日记列表', `${BASE_URL}/list`);
+            await testEndpoint('日记详情', `${BASE_URL}/123`);
+            await testEndpoint('日记统计', `${BASE_URL}/stats`);
+            await testEndpoint('日记搜索', `${BASE_URL}/search`);
+            
+            addResult('所有日记接口测试完成！', 'info');
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // 页面加载完成后自动测试
+        window.addEventListener('load', () => {
+            setTimeout(testAll, 1000);
+        });
+    </script>
+</body>
+</html> 

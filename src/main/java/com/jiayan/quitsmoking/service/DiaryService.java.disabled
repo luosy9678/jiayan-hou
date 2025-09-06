@@ -1,0 +1,53 @@
+package com.jiayan.quitsmoking.service;
+
+import com.jiayan.quitsmoking.dto.CreateDiaryRequest;
+import com.jiayan.quitsmoking.dto.UpdateDiaryRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.Map;
+
+/**
+ * 日记服务接口
+ */
+public interface DiaryService {
+    
+    /**
+     * 创建日记
+     */
+    Map<String, Object> createDiary(Long userId, CreateDiaryRequest request);
+    
+    /**
+     * 获取日记列表
+     */
+    Map<String, Object> getDiaryList(Long userId, String status, String keyword, Pageable pageable);
+    
+    /**
+     * 获取日记详情
+     */
+    Map<String, Object> getDiaryDetail(Long userId, Long id);
+    
+    /**
+     * 更新日记
+     */
+    Map<String, Object> updateDiary(Long userId, Long id, UpdateDiaryRequest request);
+    
+    /**
+     * 删除日记
+     */
+    void deleteDiary(Long userId, Long id);
+    
+    /**
+     * 转发日记到论坛
+     */
+    Map<String, Object> forwardDiaryToForum(Long userId, Long id, String section);
+    
+    /**
+     * 获取日记统计信息
+     */
+    Map<String, Object> getDiaryStats(Long userId);
+    
+    /**
+     * 搜索日记
+     */
+    Map<String, Object> searchDiary(Long userId, String keyword, String tags, 
+                                   String startDate, String endDate, Pageable pageable);
+} 
